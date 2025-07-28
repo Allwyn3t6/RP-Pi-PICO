@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "author": "Allwyn3t6",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-pi-pico", "id": "pico", "top": 50, "left": 100, "attrs": {} },
+    {
+      "type": "wokwi-7segment",
+      "id": "segment",
+      "top": 52.98,
+      "left": 273.88,
+      "attrs": { "common": "cathode" }
+    }
+  ],
+  "connections": [
+    [ "pico:GP0", "segment:A", "black", [ "h0" ] ],
+    [ "pico:GP1", "segment:B", "green", [ "h0" ] ],
+    [ "pico:GP2", "segment:C", "green", [ "h0" ] ],
+    [ "pico:GP3", "segment:D", "green", [ "h0" ] ],
+    [ "pico:GP4", "segment:E", "green", [ "h0" ] ],
+    [ "pico:GP5", "segment:F", "green", [ "h0" ] ],
+    [ "pico:GP6", "segment:G", "green", [ "h0" ] ],
+    [ "segment:COM.2", "pico:GND.1", "green", [ "h0", "v10.44" ] ],
+    [ "segment:COM.1", "pico:GND.2", "green", [ "h0" ] ]
+  ],
+  "dependencies": {}
+}
