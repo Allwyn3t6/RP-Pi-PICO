@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RP2040 Practice Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one centred column (max 680px) — a "board" header with pin-LED progress, then one task at a time. */
+:root{
+  --bg:#eef3f0; --surface:#ffffff; --ink:#14231c; --muted:#56685f; --line:#cfdcd5;
+  --pcb:#0f6b4a; --pcb-ink:#ffffff; --copper:#a8661c; --led-off:#d8e2dc;
+  --ok:#1b7f4b; --ok-bg:#e3f4ea; --bad:#b3372b; --bad-bg:#fbe9e6; --hint-bg:#fff4e0;
+  --font-body:"Atkinson Hyperlegible",Verdana,system-ui,sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0b1712; --surface:#12231b; --ink:#e6efe9; --muted:#9db3a7; --line:#24392e;
+  --pcb:#2fa576; --pcb-ink:#06120d; --copper:#e0a25a; --led-off:#22362b;
+  --ok:#54c98a; --ok-bg:#133222; --bad:#f08a7d; --bad-bg:#3a1c18; --hint-bg:#2f2614; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b1712; --surface:#12231b; --ink:#e6efe9; --muted:#9db3a7; --line:#24392e;
+  --pcb:#2fa576; --pcb-ink:#06120d; --copper:#e0a25a; --led-off:#22362b;
+  --ok:#54c98a; --ok-bg:#133222; --bad:#f08a7d; --bad-bg:#3a1c18; --hint-bg:#2f2614; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.5;padding-inline:16px;padding-block:20px 48px}
+.wrap{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.2}
+h1{font-size:1.75rem}
+h2{font-size:1.35rem}
+.label{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.board{background:var(--pcb);color:var(--pcb-ink);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden}
+.board .label{color:inherit;opacity:.85}
+.board-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.chipname{font-family:var(--font-mono);font-weight:700;font-size:.9rem;letter-spacing:.06em}
+.pins{display:flex;flex-wrap:wrap;gap:6px}
+.pin{width:18px;height:18px;border-radius:4px;background:color-mix(in srgb,var(--pcb-ink) 22%,transparent);border:1px solid color-mix(in srgb,var(--pcb-ink) 45%,transparent);transition:background .3s}
+.pin.on{background:var(--copper);border-color:var(--copper);box-shadow:0 0 8px var(--copper)}
+.pin.now{outline:2px solid var(--pcb-ink);outline-offset:1px}
+p{margin:0}
+.muted{color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:14px}
+.units{display:grid;gap:12px}
+.unit{display:grid;grid-template-columns:1fr auto;gap:10px 14px;align-items:center}
+.unit .meta{min-width:0;display:flex;flex-direction:column;gap:4px}
+.unit .btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:520px){.unit{grid-template-columns:1fr}.unit .btns{justify-content:flex-start}}
+.mini{display:flex;gap:3px;flex-wrap:wrap;margin-top:2px}
+.mini i{width:9px;height:9px;border-radius:2px;background:var(--led-off)}
+.mini i.on{background:var(--copper)}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:10px 16px;min-height:44px}
+button:focus-visible,input:focus-visible{outline:3px solid var(--copper);outline-offset:2px}
+.primary{background:var(--pcb);border-color:var(--pcb);color:var(--pcb-ink);font-weight:700}
+.ghost{background:transparent}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.spacer{flex:1}
+input[type=text]{font:inherit;width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-height:44px}
+.q{font-size:1.25rem;font-weight:700}
+.opts{display:grid;gap:10px}
+.opt{text-align:left;display:flex;gap:12px;align-items:center;padding:14px 16px;font-size:1.05rem}
+.opt .k{font-family:var(--font-mono);font-size:.8rem;border:1px solid var(--line);border-radius:6px;padding:2px 7px;color:var(--muted);flex:none}
+.opt:hover:not(:disabled){border-color:var(--pcb)}
+.opt:disabled{cursor:default}
+.opt.right{background:var(--ok-bg);border-color:var(--ok);color:var(--ink)}
+.opt.wrong{background:var(--bad-bg);border-color:var(--bad);color:var(--ink)}
+.opt.dim{opacity:.55}
+.hint{background:var(--hint-bg);border-radius:10px;padding:12px 14px}
+.feedback{border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;border-left:5px solid}
+.feedback.ok{background:var(--ok-bg);border-color:var(--ok)}
+.feedback.no{background:var(--bad-bg);border-color:var(--bad)}
+.feedback strong{font-size:1.05rem}
+.facts{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;counter-reset:f}
+.facts li{display:grid;grid-template-columns:2.2rem 1fr;gap:8px;align-items:start}
+.facts li::before{counter-increment:f;content:counter(f,decimal-leading-zero);font-family:var(--font-mono);font-size:.8rem;color:var(--copper);padding-top:3px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:2px}
+.stat b{font-size:1.6rem;font-variant-numeric:tabular-nums}
+@media (max-width:420px){.stats{grid-template-columns:1fr}}
+.stars{font-size:2rem;letter-spacing:.15em;color:var(--copper)}
+.stars .off{color:var(--led-off)}
+.cert{border:2px dashed var(--copper);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:6px}
+.who{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fld{display:flex;flex-direction:column;gap:6px;min-width:0}
+@media (max-width:480px){.who{grid-template-columns:1fr}}
+.err{color:var(--bad);font-weight:700}
+.send{border-radius:10px;padding:10px 12px;background:var(--bg);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.send.ok{background:var(--ok-bg);color:var(--ink)}
+.send.bad{background:var(--bad-bg);color:var(--ink)}
+.top-nav{display:flex;justify-content:space-between;align-items:center;gap:8px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.pop{animation:pop .25s ease-out}
+@keyframes pop{from{transform:scale(.98);opacity:.6}to{transform:none;opacity:1}}
+</style>
+</head>
+<body>
+
+<div class="wrap" id="app"></div>
+<script src="config.js"></script>
+
+<script>
+const UNITS=[
+{id:"U1",name:"Unit 1",title:"Meet the RP2040",q:[
+ ["How many processor cores does the RP2040 have?",["2","1","4"],"Look at the first digit of the name RP2040.","The RP2040 has two cores. The first digit '2' in the name stands for the number of cores."],
+ ["Which Arm processor is used in each core?",["Cortex-M0+","Cortex-M4","Cortex-A53"],"The '0' in RP2040 points to it.","Each core is an Arm Cortex-M0+. The '0' after the 2 in the name tells you the core type."],
+ ["How much SRAM is inside the RP2040?",["264 kB","64 kB","2 MB"],"It is arranged in 6 banks.","The RP2040 has 264 kB of embedded SRAM, arranged in 6 banks."],
+ ["How many GPIO pins does the RP2040 have?",["30","16","40"],"They are numbered GPIO0 to GPIO29.","There are 30 multifunction GPIO pins, GPIO0 to GPIO29."],
+ ["Which GPIO pin drives the on-board LED of the Pico?",["GPIO 25","GPIO 0","GPIO 13"],"Remember the blink program: Pin(__, Pin.OUT).","The on-board LED is on GPIO 25, so the blink program uses Pin(25, Pin.OUT)."],
+ ["What is the maximum clock speed of the cores?",["133 MHz","16 MHz","1 GHz"],"It is a little more than 100 MHz.","The two Cortex-M0+ cores run at up to 133 MHz."],
+ ["What is the resolution of the RP2040 ADC?",["12-bit","8-bit","16-bit"],"It is the same number as the months in a year.","The ADC is 12-bit, with 4 channels, 500 ksps and an internal temperature sensor."],
+ ["Which GPIO pins can be used as ADC inputs?",["GPIO 26 to 29","GPIO 0 to 3","GPIO 10 to 13"],"They are the last four GPIO pins.","GPIO 26, 27, 28 and 29 are the ADC input pins."],
+ ["Which block resets the chip when the program stops responding?",["Watchdog","SYSINFO","PLL"],"Think of a dog that keeps watch.","The watchdog resets the chip, or triggers an event, when the system stops responding."],
+ ["Which block gives read-only chip identification information?",["SYSINFO","SYSCTRL","Watchdog"],"Its name means 'system information'.","SYSINFO holds read-only registers that identify the chip."],
+ ["What does XIP stand for?",["Execute In Place","Extra Input Port","External Interrupt Pin"],"It lets code run straight from the external flash.","XIP means Execute In Place: code runs directly from external flash."],
+ ["How many data lines does QSPI use?",["4","1","8"],"The Q stands for 'quad'.","QSPI (Quad SPI) uses four data lines, so it is faster than normal SPI."],
+ ["What does the last '0' in RP2040 tell us?",["There is no on-chip flash","There is no ADC","There are no GPIO pins"],"It is about non-volatile memory.","The final '0' means the chip has no on-board non-volatile (flash) memory."],
+ ["Which is the easiest, highest-level way to program the Pico?",["MicroPython","Register level","Assembly"],"It uses simple Python commands.","MicroPython is the highest abstraction. Assembly and register-level code are the lowest."],
+ ["What is the nominal voltage of DVDD, the digital core supply?",["1.1 V","3.3 V","5 V"],"It is the same voltage that VREG_VOUT gives.","DVDD is the digital core supply at 1.1 V. It can be connected to VREG_VOUT."],
+ ["Which register field connects an internal peripheral to a GPIO pin?",["FUNC_SEL","GPIO_OUT","CPUID"],"'Function select'.","FUNC_SEL selects which internal peripheral (UART, SPI, PIO and so on) is connected to a GPIO pin."]
+]},
+{id:"U2",name:"Unit 2",title:"Bus Fabric and SIO",q:[
+ ["Which crossbar part decides who goes first when many masters want one slave?",["Arbiter","Splitter","Bridge"],"It is like a referee: many-to-one.","The arbiter handles many masters trying to reach one slave and applies the priority rules."],
+ ["Which crossbar part sends one master's request to the right slave?",["Splitter","Arbiter","FIFO"],"It splits one path into many: one-to-many.","The splitter decodes the address and routes the request to the right downstream port."],
+ ["In BUS_PRIORITY, the value 1 means:",["High priority","Low priority","No priority"],"Bigger number, bigger importance.","Priority level 1 is high priority. Level 0 is low priority."],
+ ["Two masters with the same priority want the same slave. How is the tie broken?",["Round-robin","Random","Core 0 always wins"],"Everybody gets a turn.","A round-robin tie break is used: the arbiter gives access to each master in turn."],
+ ["Which bridge joins the fast AHB-Lite bus to slow peripherals?",["APB bridge","USB bridge","SPI bridge"],"A for Advanced, P for Peripheral.","The APB bridge connects the high-speed AHB-Lite interconnect to low-bandwidth peripherals."],
+ ["How much address space does each peripheral register block get?",["4 kB","1 kB","8 kB"],"The four atomic aliases are 0x1000 apart.","Each peripheral register block has 4 kB of address space."],
+ ["A write to register address + 0x1000 performs which atomic operation?",["XOR","SET","CLEAR"],"It flips (toggles) bits.","+0x1000 is atomic XOR on write. It toggles the bits you write as 1."],
+ ["A write to register address + 0x2000 performs which atomic operation?",["SET bits","CLEAR bits","XOR bits"],"0x1000 is XOR; the next one makes bits 1.","+0x2000 is atomic bitmask SET on write."],
+ ["A write to register address + 0x3000 performs which atomic operation?",["CLEAR bits","SET bits","Normal write"],"It makes bits 0.","+0x3000 is atomic bitmask CLEAR on write."],
+ ["How many clock cycles does every SIO access take?",["1","2","8"],"SIO means Single-cycle IO.","Every SIO (IOPORT) read or write takes exactly one cycle."],
+ ["Which register tells the code if it runs on core 0 or core 1?",["CPUID","GPIO_IN","FIFO_ST"],"CPU + ID.","CPUID is the first register in the SIO. Core 0 reads 0 and core 1 reads 1."],
+ ["What is the nickname of the FIFOs that pass data between the two cores?",["Mailboxes","Spinlocks","Lanes"],"You post letters in it.","The inter-processor FIFOs are called mailboxes. Each is 32 bits wide and 8 entries deep."],
+ ["Which FIFO_ST flag means 'the incoming FIFO has data'?",["VLD","RDY","WOF"],"Short for 'valid'.","VLD = incoming FIFO has valid data. RDY = outgoing FIFO has room. WOF = written while full. ROE = read while empty."],
+ ["Which SIO hardware stops both cores using a shared resource at the same time?",["Spinlock","Interpolator","Divider"],"Read it to claim, write it to release.","Hardware spinlocks give mutually-exclusive access to shared resources."],
+ ["How many cycles does the SIO integer divider take?",["8","1","32"],"Results can be read on the 9th cycle.","The divider takes 8 cycles. Results appear in DIV_QUOTIENT and DIV_REMAINDER."],
+ ["Which interpolator mode smoothly mixes BASE0 and BASE1?",["Blend","Clamp","Shift"],"Like mixing two colours of paint.","Blend mode (only on INTERP0) does linear interpolation between BASE0 and BASE1."],
+ ["Which interpolator mode keeps a value between a minimum and a maximum?",["Clamp","Blend","Mask"],"Think of a clamp holding something firmly in place.","Clamp mode (on INTERP1) keeps the result between BASE0 and BASE1."],
+ ["Which instruction makes a core sleep until an event arrives?",["WFE","SEV","NOP"],"Wait For ____.","WFE = Wait For Event. SEV = Send Event, which wakes the other core."]
+]},
+{id:"U3",name:"Unit 3",title:"Cortex-M0+, Memory and DMA",q:[
+ ["Which controller handles interrupts in the Cortex-M0+?",["NVIC","DMA","MPU"],"Nested Vectored Interrupt Controller.","The NVIC (Nested Vectored Interrupt Controller) prioritises and handles interrupts."],
+ ["How many external interrupts are connected to the NVIC on RP2040?",["26","32","8"],"The NVIC has 32 inputs, but IRQ 26 to 31 are tied to zero.","Only the lower 26 IRQ lines are used on the RP2040."],
+ ["How many priority levels can each NVIC interrupt have?",["4","2","16"],"Two priority bits give how many levels?","Each interrupt has four priority levels."],
+ ["Which interrupt can never be switched off (masked)?",["NMI","IRQ0","SysTick"],"Non-Maskable Interrupt.","The NMI (Non-Maskable Interrupt) cannot be masked."],
+ ["Which instruction set does the Cortex-M0+ use?",["Thumb (16-bit)","ARM (64-bit)","x86"],"It is named after a finger.","The Cortex-M0+ uses the ARMv6-M Thumb instruction set, mostly 16-bit instructions."],
+ ["Which 24-bit timer gives the program a steady 'heartbeat' tick?",["SysTick","Watchdog","DREQ"],"System + Tick.","SysTick is the 24-bit system timer. An RTOS uses its tick to switch tasks."],
+ ["Which unit protects areas of memory from wrong access?",["MPU","WIC","SIO"],"Memory Protection Unit.","The MPU protects memory regions. The Cortex-M0+ MPU has 8 regions."],
+ ["What happens when code breaks an MPU rule?",["A HardFault exception","The chip powers off","Nothing"],"It is a 'hard' fault.","An MPU violation raises a HardFault exception."],
+ ["Which controller lets the chip wake up from ultra-low-power sleep?",["WIC","NVIC","APB"],"Wake-up Interrupt Controller.","The WIC watches for interrupts while the processor and NVIC sleep."],
+ ["In little-endian, 0x12345678 is stored at address 0x1000. Which byte is at 0x1000?",["0x78","0x12","0x56"],"Little end first: the least significant byte goes to the lowest address.","Little-endian stores the least significant byte (0x78) at the lowest address (0x1000)."],
+ ["How much ROM does the RP2040 have for its boot code?",["16 kB","264 kB","2 MB"],"It is much smaller than the SRAM.","The RP2040 has 16 kB of ROM for essential boot functions."],
+ ["Which SRAM banks are striped (interleaved) for faster access?",["SRAM0 to SRAM3","SRAM4 and SRAM5","Only SRAM5"],"The four big 64 kB banks.","SRAM0 to SRAM3 are striped. SRAM4 and SRAM5 are non-striped."],
+ ["How many independent channels does the RP2040 DMA have?",["12","4","26"],"One dozen.","The DMA has 12 independent channels."],
+ ["Which signal lets a peripheral tell the DMA 'I am ready for data'?",["DREQ","IRQ","NMI"],"Data REQuest.","DREQ (data request) paces DMA transfers so data is not lost."],
+ ["Which DMA control field makes one channel start another when it finishes?",["CHAIN_TO","TRANS_COUNT","READ_ADDR"],"Channels linked like a chain.","CHAIN_TO names the channel to trigger next. Two channels chained to each other make a ping-pong configuration."],
+ ["Which DMA register shows how many transfers are left?",["TRANS_COUNT","WRITE_ADDR","CTRL"],"Transfer + count.","TRANS_COUNT shows the number of transfers remaining in the current sequence."],
+ ["What can DMA sniff hardware calculate on the data?",["A checksum","The clock speed","The temperature"],"Used to check for errors.","Sniff hardware watches the data on a channel and can calculate a checksum."],
+ ["How many hardware breakpoints does the RP2040 debug unit support?",["4","2","12"],"There are 2 watchpoints, and twice as many breakpoints.","The debug unit has 4 hardware breakpoints and 2 watchpoints."]
+]}
+];
+
+const SCORE_URL=(window.LAB_CONFIG&&window.LAB_CONFIG.scoreUrl)||"";
+const STORE="rp2040-lab-v1";
+function load(){try{return JSON.parse(localStorage.getItem(STORE))||{}}catch(e){return {}}}
+function save(){try{localStorage.setItem(STORE,JSON.stringify(saved))}catch(e){}}
+let saved=load(); saved.best=saved.best||{};
+let S={screen:"home"};
+const app=document.getElementById("app");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+
+function boardHTML(u,mastered,cur){
+  const n=u.q.length;
+  let pins="";for(let i=0;i<n;i++)pins+=`<span class="pin${mastered.has(i)?" on":""}${cur===i?" now":""}" title="Question ${i+1}"></span>`;
+  return `<div class="board"><div class="board-top"><span class="chipname">RP2040 · ${u.name.toUpperCase()}</span><span class="label">${mastered.size} of ${n} pins lit</span></div><div class="pins" aria-label="${mastered.size} of ${n} questions learnt">${pins}</div></div>`;
+}
+
+function home(){
+  S={screen:"home"};
+  const name=saved.name||"",roll=saved.roll||"";
+  let units=UNITS.map((u,i)=>{
+    const b=saved.best[u.id];
+    let mini="";for(let k=0;k<u.q.length;k++)mini+=`<i class="${b&&k<b.first?"on":""}"></i>`;
+    const status=b?`Best: ${b.first} of ${u.q.length} right first time`:"Not started yet";
+    return `<div class="card unit"><div class="meta"><span class="label">${u.name} · ${u.q.length} questions</span><h3>${esc(u.title)}</h3><span class="muted">${status}</span><div class="mini">${mini}</div></div>
+    <div class="btns"><button class="ghost" data-learn="${i}">Read the facts</button><button class="primary" data-play="${i}">${b?"Play again":"Start"}</button></div></div>`}).join("");
+  app.innerHTML=`
+  <header style="display:flex;flex-direction:column;gap:6px">
+    <span class="label">U21BM501 · Microcontroller and its Applications</span>
+    <h1>RP2040 Practice Lab</h1>
+    <p class="muted">Practise on your own, at your own speed. Every right answer lights one pin on the chip. If you get a question wrong, you will see it again later, until you know it.</p>
+  </header>
+  <div class="card"><div class="who"><div class="fld"><label for="nm" class="label">Your name</label><input type="text" id="nm" placeholder="e.g. Priya S" value="${esc(name)}" autocomplete="off" maxlength="60"></div>
+  <div class="fld"><label for="rl" class="label">Roll number</label><input type="text" id="rl" placeholder="e.g. 23BM045" value="${esc(roll)}" autocomplete="off" maxlength="20"></div></div>
+  <p class="err" id="err" hidden>Type your name and roll number first, so your teacher gets your score.</p></div>
+  ${pendingNote()}
+  <div class="units">${units}</div>
+  <div class="card"><h3>How to play</h3>
+  <ol style="margin:0;padding-left:1.2rem;display:flex;flex-direction:column;gap:6px">
+   <li>Pick a unit. Start with Unit 1 if you are not sure.</li>
+   <li>Tap <b>Read the facts</b> first if you want to revise before you play.</li>
+   <li>Choose one of three answers. Stuck? Tap <b>Show a hint</b>.</li>
+   <li>Read the short explanation after every answer, even when you are right.</li>
+   <li>When all the pins are lit, show the result screen to your teacher.</li>
+  </ol></div>`;
+  const nm=document.getElementById("nm"),rl=document.getElementById("rl");
+  nm.addEventListener("input",()=>{saved.name=nm.value.trim();save()});
+  rl.addEventListener("input",()=>{saved.roll=rl.value.trim().toUpperCase();save()});
+  const ready=()=>{if(saved.name&&saved.roll)return true;document.getElementById("err").hidden=false;(saved.name?rl:nm).focus();return false};
+  app.querySelectorAll("[data-play]").forEach(b=>b.onclick=()=>{if(ready())start(+b.dataset.play)});
+  app.querySelectorAll("[data-learn]").forEach(b=>b.onclick=()=>{if(ready())learn(+b.dataset.learn)});
+  flushPending();
+}
+
+function learn(ui){
+  const u=UNITS[ui];S={screen:"learn",ui};
+  app.innerHTML=`<div class="top-nav"><button class="ghost" id="back">← All units</button><span class="label">${u.name}</span></div>
+  <div class="card pop"><span class="label">Read these ${u.q.length} facts slowly</span><h2>${esc(u.title)}</h2>
+  <ol class="facts">${u.q.map(q=>`<li><span>${esc(q[3])}</span></li>`).join("")}</ol>
+  <div class="row"><span class="spacer"></span><button class="primary" id="go">I'm ready, start the game</button></div></div>`;
+  document.getElementById("back").onclick=home;document.getElementById("go").onclick=()=>start(ui);
+  window.scrollTo(0,0);
+}
+
+function start(ui){
+  const u=UNITS[ui];
+  S={screen:"play",ui,queue:shuffle(u.q.map((_,i)=>i)),mastered:[],firstTry:[],tried:[],hints:0,mistakes:0,t0:Date.now(),answered:false,hintShown:false,opts:null};
+  ask();
+}
+
+function ask(){
+  const u=UNITS[S.ui];const qi=S.queue[0];const q=u.q[qi];
+  if(!S.opts)S.opts=shuffle(q[1].map((t,i)=>({t,ok:i===0})));
+  S.answered=false;S.hintShown=false;S.pick=null;S.again=S.tried.includes(qi);
+  render();
+}
+
+function render(){
+  const u=UNITS[S.ui];const qi=S.queue[0];const q=u.q[qi];const m=new Set(S.mastered);
+  const again=S.again;
+  let opts=S.opts.map((o,i)=>{
+    let cls="opt";
+    if(S.answered){if(o.ok)cls+=" right";else if(S.pick===i)cls+=" wrong";else cls+=" dim"}
+    return `<button class="${cls}" data-o="${i}" ${S.answered?"disabled":""}><span class="k">${i+1}</span><span>${esc(o.t)}</span></button>`}).join("");
+  let fb="";
+  if(S.answered){
+    const ok=S.opts[S.pick].ok;
+    fb=`<div class="feedback ${ok?"ok":"no"} pop" role="status"><strong>${ok?"Correct!":"Not this time. The answer is: "+esc(S.opts.find(o=>o.ok).t)}</strong><span>${esc(q[3])}</span>${ok?"":"<span class='muted'>This question will come back later. You will get it next time.</span>"}</div>
+    <div class="row"><span class="spacer"></span><button class="primary" id="next">${S.queue.length===1&&ok?"See my result":"Next question →"}</button></div>`;
+  }
+  app.innerHTML=`<div class="top-nav"><button class="ghost" id="back">← All units</button><span class="label">${esc(u.title)}</span></div>
+  ${boardHTML(u,m,qi)}
+  <div class="card pop">
+    <span class="label">${again?"Try this one again":"Question"} · ${S.queue.length} left to light</span>
+    <p class="q">${esc(q[0])}</p>
+    <div class="opts">${opts}</div>
+    ${!S.answered?(S.hintShown?`<div class="hint"><span class="label">Hint</span><p>${esc(q[2])}</p></div>`:`<div class="row"><button class="ghost" id="hint">Show a hint</button></div>`):""}
+    ${fb}
+  </div>`;
+  document.getElementById("back").onclick=home;
+  app.querySelectorAll("[data-o]").forEach(b=>b.onclick=()=>choose(+b.dataset.o));
+  const h=document.getElementById("hint");if(h)h.onclick=()=>{S.hintShown=true;S.hints++;S.usedHint=S.usedHint||[];S.usedHint.push(qi);render()};
+  const n=document.getElementById("next");if(n){n.onclick=next;n.focus()}
+}
+
+function choose(i){
+  if(S.answered)return;
+  const qi=S.queue[0];S.pick=i;S.answered=true;
+  const ok=S.opts[i].ok;
+  if(ok){
+    if(!S.tried.includes(qi)&&!(S.usedHint||[]).includes(qi))S.firstTry.push(qi);
+    S.mastered.push(qi);
+  }else{S.mistakes++;if(!S.tried.includes(qi))S.tried.push(qi)}
+  render();
+}
+
+function next(){
+  const qi=S.queue.shift();const ok=S.opts[S.pick].ok;S.opts=null;
+  if(!ok){const pos=Math.min(3,S.queue.length);S.queue.splice(pos,0,qi)}
+  if(!S.queue.length)return finish();
+  ask();window.scrollTo(0,0);
+}
+
+function pendingNote(){
+  const p=(saved.pending||[]).length;
+  return SCORE_URL&&p?`<div class="card"><p class="send">${p} score${p>1?"s are":" is"} waiting to be sent. They will be sent automatically when you are online.</p></div>`:"";
+}
+let sending=false;
+async function flushPending(show){
+  if(!SCORE_URL||sending||!(saved.pending||[]).length)return;
+  sending=true;const el=()=>document.getElementById("send");
+  while((saved.pending||[]).length){
+    const rec=saved.pending[0];
+    try{
+      await fetch(SCORE_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(rec)});
+      saved.pending.shift();save();
+      if(show&&el()){el().textContent="Your score has been sent to your teacher.";el().className="send ok"}
+    }catch(e){
+      if(show&&el()){el().innerHTML='Could not send your score (no internet?). It is saved on this device. <button class="ghost" id="retry">Try again</button>';el().className="send bad";
+        const r=document.getElementById("retry");if(r)r.onclick=()=>{el().textContent="Sending…";el().className="send";flushPending(true)}}
+      break;
+    }
+  }
+  sending=false;
+}
+function finish(){
+  const u=UNITS[S.ui];const n=u.q.length;const first=S.firstTry.length;const hints=S.hints,mist=S.mistakes;
+  const missed=S.tried.map(i=>u.q[i][0]).join(" | ");
+  const record={name:saved.name||"",roll:saved.roll||"",unit:u.name,first,total:n,hints,mistakes:mist,stars:0,minutes:Math.round((Date.now()-S.t0)/6000)/10,missed};
+  const stars=first>=n*0.85?3:first>=n*0.6?2:1;
+  record.stars=stars;
+  const prev=saved.best[u.id];
+  if(!prev||first>prev.first)saved.best[u.id]={first,date:new Date().toISOString().slice(0,10)};save();
+  const name=(saved.name||"(name not entered)")+(saved.roll?" · "+saved.roll:"");
+  const d=new Date();const ds=d.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})+", "+d.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
+  const msg=stars===3?"Excellent. You know this unit well.":stars===2?"Good work. Play once more to light more pins first time.":"Well done for finishing. Read the facts and play again; it gets easier each time.";
+  const nextU=S.ui<UNITS.length-1?`<button class="primary" id="nextu">Go to ${UNITS[S.ui+1].name}</button>`:"";
+  S={screen:"done",ui:S.ui};
+  app.innerHTML=`${boardHTML(u,new Set(u.q.map((_,i)=>i)),-1)}
+  <div class="card pop">
+    <span class="label">All ${n} pins lit</span>
+    <h2>${esc(u.name)} complete</h2>
+    <div class="stars" aria-label="${stars} of 3 stars">${"★".repeat(stars)}<span class="off">${"★".repeat(3-stars)}</span></div>
+    <p>${msg}</p>
+    <div class="stats">
+      <div class="stat"><span class="label">Right first time</span><b>${first}/${n}</b></div>
+      <div class="stat"><span class="label">Hints used</span><b>${hints}</b></div>
+      <div class="stat"><span class="label">Mistakes fixed</span><b>${mist}</b></div>
+    </div>
+    <div class="cert"><span class="label">Show this to your teacher</span><b>${esc(name)}</b><span>${esc(u.name)}: ${esc(u.title)} · ${first}/${n} first time · ${stars} star${stars>1?"s":""}</span><span class="muted">${ds}</span></div>
+    <p class="send" id="send" ${SCORE_URL?"":"hidden"}>Sending your score to your teacher…</p>
+    <div class="row"><button class="ghost" id="home">All units</button><button class="ghost" id="again">Play again</button><span class="spacer"></span>${nextU}</div>
+  </div>`;
+  document.getElementById("home").onclick=home;
+  document.getElementById("again").onclick=()=>start(S.ui);
+  const nu=document.getElementById("nextu");if(nu)nu.onclick=()=>learn(S.ui+1);
+  if(SCORE_URL){saved.pending=(saved.pending||[]).concat([record]);save();flushPending(true)}
+  window.scrollTo(0,0);
+}
+
+document.addEventListener("keydown",e=>{
+  if(S.screen!=="play"||e.target.tagName==="INPUT")return;
+  if(!S.answered&&["1","2","3"].includes(e.key))choose(+e.key-1);
+});
+home();
+</script>
+
+</body>
+</html>
