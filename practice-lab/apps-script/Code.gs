@@ -17,8 +17,8 @@ function doPost(e) {
     };
     const num = (v, max) => Math.max(0, Math.min(max, Number(v) || 0));
 
-    const name = text(d.name, 60), roll = text(d.roll, 20).toUpperCase(), unit = text(d.unit, 10);
-    if (!name || !roll || !/^Unit [1-3]$/.test(unit)) return reply({ ok: false, error: 'bad data' });
+    const name = text(d.name, 60), roll = text(d.roll, 20).toUpperCase(), unit = text(d.unit, 50);
+    if (!name || !roll || !/^(M[1-8]|MIX) .{1,40}$/.test(unit)) return reply({ ok: false, error: 'bad data' });
 
     SpreadsheetApp.getActive().getSheetByName(SHEET_NAME).appendRow([
       new Date(), name, roll, unit,

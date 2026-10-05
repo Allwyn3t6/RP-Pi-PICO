@@ -6,33 +6,35 @@
 <title>RP2040 Practice Lab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
-/* Layout: one centred column (max 680px) — a "board" header with pin-LED progress, then one task at a time. */
+/* Layout: one centred column (max 720px). A green "board" header carries pin-LED progress; one task at a time below it. */
 :root{
-  --bg:#eef3f0; --surface:#ffffff; --ink:#14231c; --muted:#56685f; --line:#cfdcd5;
-  --pcb:#0f6b4a; --pcb-ink:#ffffff; --copper:#a8661c; --led-off:#d8e2dc;
+  --bg:#eef3f0; --surface:#ffffff; --ink:#14231c; --muted:#56685f; --line:#cfdcd5; --soft:#f4f8f6;
+  --pcb:#0f6b4a; --pcb-ink:#ffffff; --copper:#a8661c; --copper-bg:#f8eedf; --led-off:#d8e2dc;
   --ok:#1b7f4b; --ok-bg:#e3f4ea; --bad:#b3372b; --bad-bg:#fbe9e6; --hint-bg:#fff4e0;
   --font-body:"Atkinson Hyperlegible",Verdana,system-ui,sans-serif;
   --font-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
   --r:12px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0b1712; --surface:#12231b; --ink:#e6efe9; --muted:#9db3a7; --line:#24392e;
-  --pcb:#2fa576; --pcb-ink:#06120d; --copper:#e0a25a; --led-off:#22362b;
+  --bg:#0b1712; --surface:#12231b; --ink:#e6efe9; --muted:#9db3a7; --line:#24392e; --soft:#0f1e17;
+  --pcb:#2fa576; --pcb-ink:#06120d; --copper:#e0a25a; --copper-bg:#2d2213; --led-off:#22362b;
   --ok:#54c98a; --ok-bg:#133222; --bad:#f08a7d; --bad-bg:#3a1c18; --hint-bg:#2f2614; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0b1712; --surface:#12231b; --ink:#e6efe9; --muted:#9db3a7; --line:#24392e;
-  --pcb:#2fa576; --pcb-ink:#06120d; --copper:#e0a25a; --led-off:#22362b;
+  --bg:#0b1712; --surface:#12231b; --ink:#e6efe9; --muted:#9db3a7; --line:#24392e; --soft:#0f1e17;
+  --pcb:#2fa576; --pcb-ink:#06120d; --copper:#e0a25a; --copper-bg:#2d2213; --led-off:#22362b;
   --ok:#54c98a; --ok-bg:#133222; --bad:#f08a7d; --bad-bg:#3a1c18; --hint-bg:#2f2614; color-scheme:dark}
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.5;padding-inline:16px;padding-block:20px 48px}
-.wrap{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.55;padding-inline:16px;padding-block:20px 56px}
+.wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
 h1,h2,h3{text-wrap:balance;margin:0;line-height:1.2}
-h1{font-size:1.75rem}
-h2{font-size:1.35rem}
+h1{font-size:1.8rem} h2{font-size:1.4rem} h3{font-size:1.12rem}
+p{margin:0}
+b{font-weight:700}
 .label{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.board{background:var(--pcb);color:var(--pcb-ink);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden}
+.muted{color:var(--muted)}
+.board{background:var(--pcb);color:var(--pcb-ink);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:10px}
 .board .label{color:inherit;opacity:.85}
 .board-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
 .chipname{font-family:var(--font-mono);font-weight:700;font-size:.9rem;letter-spacing:.06em}
@@ -40,24 +42,65 @@ h2{font-size:1.35rem}
 .pin{width:18px;height:18px;border-radius:4px;background:color-mix(in srgb,var(--pcb-ink) 22%,transparent);border:1px solid color-mix(in srgb,var(--pcb-ink) 45%,transparent);transition:background .3s}
 .pin.on{background:var(--copper);border-color:var(--copper);box-shadow:0 0 8px var(--copper)}
 .pin.now{outline:2px solid var(--pcb-ink);outline-offset:1px}
-p{margin:0}
-.muted{color:var(--muted)}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:14px}
-.units{display:grid;gap:12px}
-.unit{display:grid;grid-template-columns:1fr auto;gap:10px 14px;align-items:center}
-.unit .meta{min-width:0;display:flex;flex-direction:column;gap:4px}
-.unit .btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-@media (max-width:520px){.unit{grid-template-columns:1fr}.unit .btns{justify-content:flex-start}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.group{display:flex;flex-direction:column;gap:10px}
+.mods{display:grid;gap:10px}
+.mod{display:grid;grid-template-columns:auto 1fr auto;gap:6px 14px;align-items:center}
+.mod .num{font-family:var(--font-mono);font-weight:700;font-size:.85rem;width:2.6rem;height:2.6rem;border-radius:10px;display:grid;place-items:center;background:var(--soft);border:1px solid var(--line);color:var(--muted)}
+.mod.done .num{background:var(--copper);border-color:var(--copper);color:var(--pcb-ink)}
+.mod .meta{min-width:0;display:flex;flex-direction:column;gap:3px}
+.mod .btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.badge{display:inline-block;font-family:var(--font-mono);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:var(--copper-bg);color:var(--copper);border:1px solid var(--copper);margin-left:6px;vertical-align:middle}
+@media (max-width:560px){.mod{grid-template-columns:1fr}.mod .num{display:none}.mod .btns{justify-content:flex-start}}
 .mini{display:flex;gap:3px;flex-wrap:wrap;margin-top:2px}
-.mini i{width:9px;height:9px;border-radius:2px;background:var(--led-off)}
+.mini i{width:8px;height:8px;border-radius:2px;background:var(--led-off)}
 .mini i.on{background:var(--copper)}
 button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:10px 16px;min-height:44px}
 button:focus-visible,input:focus-visible{outline:3px solid var(--copper);outline-offset:2px}
 .primary{background:var(--pcb);border-color:var(--pcb);color:var(--pcb-ink);font-weight:700}
 .ghost{background:transparent}
+.link{border:none;background:none;padding:0;min-height:0;color:var(--pcb);text-decoration:underline;text-underline-offset:3px}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .spacer{flex:1}
-input[type=text]{font:inherit;width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-height:44px}
+input[type=text],input[type=search]{font:inherit;width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-height:44px}
+.who{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fld{display:flex;flex-direction:column;gap:6px;min-width:0}
+@media (max-width:480px){.who{grid-template-columns:1fr}}
+.err{color:var(--bad);font-weight:700}
+.overall{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.bar{flex:1;min-width:160px;height:10px;border-radius:99px;background:var(--led-off);overflow:hidden}
+.bar span{display:block;height:100%;background:var(--copper)}
+/* lesson */
+.dots{display:flex;gap:6px;flex-wrap:wrap}
+.dots i{width:22px;height:6px;border-radius:3px;background:var(--led-off)}
+.dots i.on{background:var(--pcb)}
+.lesson-body{display:flex;flex-direction:column;gap:14px;font-size:1.06rem}
+.analogy{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.key{background:var(--copper-bg);border:2px solid var(--copper);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;font-weight:700}
+.key .label{color:var(--copper)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--soft);font-family:var(--font-mono);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+tr:last-child td{border-bottom:none}
+td:first-child{font-weight:700;white-space:nowrap}
+.flow{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0;counter-reset:s}
+.flow li{position:relative;padding:8px 0 8px 44px;min-height:40px}
+.flow li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:6px;width:30px;height:30px;border-radius:50%;background:var(--pcb);color:var(--pcb-ink);font-family:var(--font-mono);font-weight:700;font-size:.85rem;display:grid;place-items:center}
+.flow li:not(:last-child)::after{content:"";position:absolute;left:14px;top:38px;bottom:-6px;width:2px;background:var(--line)}
+pre{margin:0;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px 14px;overflow-x:auto;font-family:var(--font-mono);font-size:.84rem;line-height:1.5}
+.dia{border:1px solid var(--line);border-radius:10px;background:var(--soft);padding:8px;overflow-x:auto}
+.dia svg{display:block;width:100%;max-width:560px;margin:0 auto;height:auto;min-width:300px}
+.dia .bx{fill:var(--surface);stroke:var(--ink);stroke-width:1.3}
+.dia .ac{fill:var(--pcb);stroke:var(--pcb)}
+.dia .cu{fill:var(--copper-bg);stroke:var(--copper);stroke-width:1.3}
+.dia text{fill:var(--ink);font-family:var(--font-body);font-size:13px}
+.dia .t-in{fill:var(--pcb-ink);font-weight:700}
+.dia .t-sm{font-size:11px;fill:var(--muted)}
+.dia .t-b{font-weight:700}
+.dia .ln{stroke:var(--muted);stroke-width:1.5;fill:none}
+.dia .arr{fill:var(--muted)}
+/* play */
 .q{font-size:1.25rem;font-weight:700}
 .opts{display:grid;gap:10px}
 .opt{text-align:left;display:flex;gap:12px;align-items:center;padding:14px 16px;font-size:1.05rem}
@@ -72,9 +115,6 @@ input[type=text]{font:inherit;width:100%;padding:10px 12px;border-radius:10px;bo
 .feedback.ok{background:var(--ok-bg);border-color:var(--ok)}
 .feedback.no{background:var(--bad-bg);border-color:var(--bad)}
 .feedback strong{font-size:1.05rem}
-.facts{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;counter-reset:f}
-.facts li{display:grid;grid-template-columns:2.2rem 1fr;gap:8px;align-items:start}
-.facts li::before{counter-increment:f;content:counter(f,decimal-leading-zero);font-family:var(--font-mono);font-size:.8rem;color:var(--copper);padding-top:3px}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .stat{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:2px}
 .stat b{font-size:1.6rem;font-variant-numeric:tabular-nums}
@@ -82,268 +122,783 @@ input[type=text]{font:inherit;width:100%;padding:10px 12px;border-radius:10px;bo
 .stars{font-size:2rem;letter-spacing:.15em;color:var(--copper)}
 .stars .off{color:var(--led-off)}
 .cert{border:2px dashed var(--copper);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:6px}
-.who{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.fld{display:flex;flex-direction:column;gap:6px;min-width:0}
-@media (max-width:480px){.who{grid-template-columns:1fr}}
-.err{color:var(--bad);font-weight:700}
-.send{border-radius:10px;padding:10px 12px;background:var(--bg);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.send.ok{background:var(--ok-bg);color:var(--ink)}
-.send.bad{background:var(--bad-bg);color:var(--ink)}
-.top-nav{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.send{border-radius:10px;padding:10px 12px;background:var(--soft);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.send.ok{background:var(--ok-bg)} .send.bad{background:var(--bad-bg)}
+.top-nav{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+/* glossary */
+.gl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.gl li{display:grid;grid-template-columns:9.5rem 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.gl li:last-child{border-bottom:none}
+.gl dt,.gl .t{font-weight:700;font-family:var(--font-mono);font-size:.9rem;overflow-wrap:anywhere}
+@media (max-width:480px){.gl li{grid-template-columns:1fr;gap:2px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 .pop{animation:pop .25s ease-out}
-@keyframes pop{from{transform:scale(.98);opacity:.6}to{transform:none;opacity:1}}
+@keyframes pop{from{transform:translateY(4px)}to{transform:none}}
 </style>
 </head>
 <body>
 
 <div class="wrap" id="app"></div>
 <script src="config.js"></script>
-
 <script>
-const UNITS=[
-{id:"U1",name:"Unit 1",title:"Meet the RP2040",q:[
- ["How many processor cores does the RP2040 have?",["2","1","4"],"Look at the first digit of the name RP2040.","The RP2040 has two cores. The first digit '2' in the name stands for the number of cores."],
- ["Which Arm processor is used in each core?",["Cortex-M0+","Cortex-M4","Cortex-A53"],"The '0' in RP2040 points to it.","Each core is an Arm Cortex-M0+. The '0' after the 2 in the name tells you the core type."],
- ["How much SRAM is inside the RP2040?",["264 kB","64 kB","2 MB"],"It is arranged in 6 banks.","The RP2040 has 264 kB of embedded SRAM, arranged in 6 banks."],
- ["How many GPIO pins does the RP2040 have?",["30","16","40"],"They are numbered GPIO0 to GPIO29.","There are 30 multifunction GPIO pins, GPIO0 to GPIO29."],
- ["Which GPIO pin drives the on-board LED of the Pico?",["GPIO 25","GPIO 0","GPIO 13"],"Remember the blink program: Pin(__, Pin.OUT).","The on-board LED is on GPIO 25, so the blink program uses Pin(25, Pin.OUT)."],
- ["What is the maximum clock speed of the cores?",["133 MHz","16 MHz","1 GHz"],"It is a little more than 100 MHz.","The two Cortex-M0+ cores run at up to 133 MHz."],
- ["What is the resolution of the RP2040 ADC?",["12-bit","8-bit","16-bit"],"It is the same number as the months in a year.","The ADC is 12-bit, with 4 channels, 500 ksps and an internal temperature sensor."],
- ["Which GPIO pins can be used as ADC inputs?",["GPIO 26 to 29","GPIO 0 to 3","GPIO 10 to 13"],"They are the last four GPIO pins.","GPIO 26, 27, 28 and 29 are the ADC input pins."],
- ["Which block resets the chip when the program stops responding?",["Watchdog","SYSINFO","PLL"],"Think of a dog that keeps watch.","The watchdog resets the chip, or triggers an event, when the system stops responding."],
- ["Which block gives read-only chip identification information?",["SYSINFO","SYSCTRL","Watchdog"],"Its name means 'system information'.","SYSINFO holds read-only registers that identify the chip."],
- ["What does XIP stand for?",["Execute In Place","Extra Input Port","External Interrupt Pin"],"It lets code run straight from the external flash.","XIP means Execute In Place: code runs directly from external flash."],
- ["How many data lines does QSPI use?",["4","1","8"],"The Q stands for 'quad'.","QSPI (Quad SPI) uses four data lines, so it is faster than normal SPI."],
- ["What does the last '0' in RP2040 tell us?",["There is no on-chip flash","There is no ADC","There are no GPIO pins"],"It is about non-volatile memory.","The final '0' means the chip has no on-board non-volatile (flash) memory."],
- ["Which is the easiest, highest-level way to program the Pico?",["MicroPython","Register level","Assembly"],"It uses simple Python commands.","MicroPython is the highest abstraction. Assembly and register-level code are the lowest."],
- ["What is the nominal voltage of DVDD, the digital core supply?",["1.1 V","3.3 V","5 V"],"It is the same voltage that VREG_VOUT gives.","DVDD is the digital core supply at 1.1 V. It can be connected to VREG_VOUT."],
- ["Which register field connects an internal peripheral to a GPIO pin?",["FUNC_SEL","GPIO_OUT","CPUID"],"'Function select'.","FUNC_SEL selects which internal peripheral (UART, SPI, PIO and so on) is connected to a GPIO pin."]
-]},
-{id:"U2",name:"Unit 2",title:"Bus Fabric and SIO",q:[
- ["Which crossbar part decides who goes first when many masters want one slave?",["Arbiter","Splitter","Bridge"],"It is like a referee: many-to-one.","The arbiter handles many masters trying to reach one slave and applies the priority rules."],
- ["Which crossbar part sends one master's request to the right slave?",["Splitter","Arbiter","FIFO"],"It splits one path into many: one-to-many.","The splitter decodes the address and routes the request to the right downstream port."],
- ["In BUS_PRIORITY, the value 1 means:",["High priority","Low priority","No priority"],"Bigger number, bigger importance.","Priority level 1 is high priority. Level 0 is low priority."],
- ["Two masters with the same priority want the same slave. How is the tie broken?",["Round-robin","Random","Core 0 always wins"],"Everybody gets a turn.","A round-robin tie break is used: the arbiter gives access to each master in turn."],
- ["Which bridge joins the fast AHB-Lite bus to slow peripherals?",["APB bridge","USB bridge","SPI bridge"],"A for Advanced, P for Peripheral.","The APB bridge connects the high-speed AHB-Lite interconnect to low-bandwidth peripherals."],
- ["How much address space does each peripheral register block get?",["4 kB","1 kB","8 kB"],"The four atomic aliases are 0x1000 apart.","Each peripheral register block has 4 kB of address space."],
- ["A write to register address + 0x1000 performs which atomic operation?",["XOR","SET","CLEAR"],"It flips (toggles) bits.","+0x1000 is atomic XOR on write. It toggles the bits you write as 1."],
- ["A write to register address + 0x2000 performs which atomic operation?",["SET bits","CLEAR bits","XOR bits"],"0x1000 is XOR; the next one makes bits 1.","+0x2000 is atomic bitmask SET on write."],
- ["A write to register address + 0x3000 performs which atomic operation?",["CLEAR bits","SET bits","Normal write"],"It makes bits 0.","+0x3000 is atomic bitmask CLEAR on write."],
- ["How many clock cycles does every SIO access take?",["1","2","8"],"SIO means Single-cycle IO.","Every SIO (IOPORT) read or write takes exactly one cycle."],
- ["Which register tells the code if it runs on core 0 or core 1?",["CPUID","GPIO_IN","FIFO_ST"],"CPU + ID.","CPUID is the first register in the SIO. Core 0 reads 0 and core 1 reads 1."],
- ["What is the nickname of the FIFOs that pass data between the two cores?",["Mailboxes","Spinlocks","Lanes"],"You post letters in it.","The inter-processor FIFOs are called mailboxes. Each is 32 bits wide and 8 entries deep."],
- ["Which FIFO_ST flag means 'the incoming FIFO has data'?",["VLD","RDY","WOF"],"Short for 'valid'.","VLD = incoming FIFO has valid data. RDY = outgoing FIFO has room. WOF = written while full. ROE = read while empty."],
- ["Which SIO hardware stops both cores using a shared resource at the same time?",["Spinlock","Interpolator","Divider"],"Read it to claim, write it to release.","Hardware spinlocks give mutually-exclusive access to shared resources."],
- ["How many cycles does the SIO integer divider take?",["8","1","32"],"Results can be read on the 9th cycle.","The divider takes 8 cycles. Results appear in DIV_QUOTIENT and DIV_REMAINDER."],
- ["Which interpolator mode smoothly mixes BASE0 and BASE1?",["Blend","Clamp","Shift"],"Like mixing two colours of paint.","Blend mode (only on INTERP0) does linear interpolation between BASE0 and BASE1."],
- ["Which interpolator mode keeps a value between a minimum and a maximum?",["Clamp","Blend","Mask"],"Think of a clamp holding something firmly in place.","Clamp mode (on INTERP1) keeps the result between BASE0 and BASE1."],
- ["Which instruction makes a core sleep until an event arrives?",["WFE","SEV","NOP"],"Wait For ____.","WFE = Wait For Event. SEV = Send Event, which wakes the other core."]
-]},
-{id:"U3",name:"Unit 3",title:"Cortex-M0+, Memory and DMA",q:[
- ["Which controller handles interrupts in the Cortex-M0+?",["NVIC","DMA","MPU"],"Nested Vectored Interrupt Controller.","The NVIC (Nested Vectored Interrupt Controller) prioritises and handles interrupts."],
- ["How many external interrupts are connected to the NVIC on RP2040?",["26","32","8"],"The NVIC has 32 inputs, but IRQ 26 to 31 are tied to zero.","Only the lower 26 IRQ lines are used on the RP2040."],
- ["How many priority levels can each NVIC interrupt have?",["4","2","16"],"Two priority bits give how many levels?","Each interrupt has four priority levels."],
- ["Which interrupt can never be switched off (masked)?",["NMI","IRQ0","SysTick"],"Non-Maskable Interrupt.","The NMI (Non-Maskable Interrupt) cannot be masked."],
- ["Which instruction set does the Cortex-M0+ use?",["Thumb (16-bit)","ARM (64-bit)","x86"],"It is named after a finger.","The Cortex-M0+ uses the ARMv6-M Thumb instruction set, mostly 16-bit instructions."],
- ["Which 24-bit timer gives the program a steady 'heartbeat' tick?",["SysTick","Watchdog","DREQ"],"System + Tick.","SysTick is the 24-bit system timer. An RTOS uses its tick to switch tasks."],
- ["Which unit protects areas of memory from wrong access?",["MPU","WIC","SIO"],"Memory Protection Unit.","The MPU protects memory regions. The Cortex-M0+ MPU has 8 regions."],
- ["What happens when code breaks an MPU rule?",["A HardFault exception","The chip powers off","Nothing"],"It is a 'hard' fault.","An MPU violation raises a HardFault exception."],
- ["Which controller lets the chip wake up from ultra-low-power sleep?",["WIC","NVIC","APB"],"Wake-up Interrupt Controller.","The WIC watches for interrupts while the processor and NVIC sleep."],
- ["In little-endian, 0x12345678 is stored at address 0x1000. Which byte is at 0x1000?",["0x78","0x12","0x56"],"Little end first: the least significant byte goes to the lowest address.","Little-endian stores the least significant byte (0x78) at the lowest address (0x1000)."],
- ["How much ROM does the RP2040 have for its boot code?",["16 kB","264 kB","2 MB"],"It is much smaller than the SRAM.","The RP2040 has 16 kB of ROM for essential boot functions."],
- ["Which SRAM banks are striped (interleaved) for faster access?",["SRAM0 to SRAM3","SRAM4 and SRAM5","Only SRAM5"],"The four big 64 kB banks.","SRAM0 to SRAM3 are striped. SRAM4 and SRAM5 are non-striped."],
- ["How many independent channels does the RP2040 DMA have?",["12","4","26"],"One dozen.","The DMA has 12 independent channels."],
- ["Which signal lets a peripheral tell the DMA 'I am ready for data'?",["DREQ","IRQ","NMI"],"Data REQuest.","DREQ (data request) paces DMA transfers so data is not lost."],
- ["Which DMA control field makes one channel start another when it finishes?",["CHAIN_TO","TRANS_COUNT","READ_ADDR"],"Channels linked like a chain.","CHAIN_TO names the channel to trigger next. Two channels chained to each other make a ping-pong configuration."],
- ["Which DMA register shows how many transfers are left?",["TRANS_COUNT","WRITE_ADDR","CTRL"],"Transfer + count.","TRANS_COUNT shows the number of transfers remaining in the current sequence."],
- ["What can DMA sniff hardware calculate on the data?",["A checksum","The clock speed","The temperature"],"Used to check for errors.","Sniff hardware watches the data on a channel and can calculate a checksum."],
- ["How many hardware breakpoints does the RP2040 debug unit support?",["4","2","12"],"There are 2 watchpoints, and twice as many breakpoints.","The debug unit has 4 hardware breakpoints and 2 watchpoints."]
-]}
+/* Lesson card fields: h (heading), p (html), flow [steps], table {head:[], rows:[[]]}, svg (diagram key),
+   code (string), analogy, key.  Question: [question, [correct, wrong, wrong...], hint, explanation] */
+const MODULES = [
+/* ------------------------------------------------------------------ M1 */
+{id:"M1",tag:"Unit 1",title:"Meet the RP2040",
+ blurb:"What a microcontroller is, how to read the name RP2040, and the chip's main numbers.",
+ lesson:[
+  {h:"What is a microcontroller?",
+   p:"A <b>microprocessor</b> is only the brain (CPU). It needs separate chips for memory and input/output. A <b>microcontroller</b> puts the CPU, memory and input/output on <b>one chip</b>. The RP2040 is a microcontroller.",
+   analogy:"A microprocessor is like an engine on its own. A microcontroller is a complete scooter: engine, fuel tank and handlebars together.",
+   key:"Microcontroller = CPU + memory + input/output on one chip."},
+  {h:"Reading the name RP2040",svg:"name",
+   p:"Every digit in the name tells you something about the chip.",
+   key:"2 = two cores · 0 = Cortex-M0+ · 4 = about 2⁴ × 16 kB = 256 kB RAM · 0 = no on-chip flash."},
+  {h:"The headline numbers",
+   table:{head:["Feature","RP2040"],rows:[["Processor","2 × Arm Cortex-M0+, up to 133 MHz"],["SRAM","264 kB in 6 banks"],["ROM","16 kB (boot code)"],["GPIO","30 pins (GPIO0 to GPIO29)"],["Flash","External, through 6 QSPI pins (XIP)"],["ADC","4 channels, 12-bit, 500 ksps + temperature sensor"],["USB","USB 1.1 host or device"],["PIO","2 blocks × 4 state machines"]]},
+   key:"Learn this table well: many exam questions come straight from it."},
+  {h:"Eight blocks inside the chip",
+   flow:["Processor: two Cortex-M0+ cores that run your program","Clock: crystal + PLL make the clock signals","IO: the GPIO pins","Memory: ROM, SRAM and the external flash","Bus fabric: the roads that connect everything","DMA: moves data without the CPU","Peripherals: UART, SPI, I2C, PWM, ADC, timers, USB","PIO: small programmable I/O machines"],
+   key:"Processor, Clock, IO, Memory, Bus fabric, DMA, Peripherals, PIO."},
+  {h:"Four ways to blink the LED",
+   p:"The on-board LED is on <b>GPIO 25</b>. You can switch it on at four levels, from easiest to closest to the hardware:",
+   table:{head:["Level","Switch the LED on"],rows:[["MicroPython (highest)","led = Pin(25, Pin.OUT); led.value(1)"],["C SDK","gpio_put(25, 1);"],["Register level","GPIO_OUT_SET = (1 << 25);  // 0xD0000014"],["Assembly (lowest)","str r1, [r0]   @ r0 = GPIO_OUT_SET"]]},
+   analogy:"Like ordering food: you can use an app (MicroPython), phone the shop (C SDK), walk into the kitchen (registers), or cook it yourself (assembly).",
+   key:"Higher level = easier to write. Lower level = closer to the hardware."},
+  {h:"Where the logic comes from",
+   p:"Inside every chip are millions of transistors that act as switches. They are joined into logic gates. Three classic logic families are <b>RTL</b> (resistor-transistor), <b>DTL</b> (diode-transistor) and <b>TTL</b> (transistor-transistor).",
+   key:"TTL uses transistors for logic and amplification and is the fastest of the three. RTL is the slowest."}
+ ],
+ q:[
+  ["A microcontroller has CPU, memory and input/output…",["on one chip","on three separate chips","only in software"],"'Micro' + 'controller' = everything in one small package.","A microcontroller puts the CPU, memory and I/O on one chip. A microprocessor needs separate chips."],
+  ["How many processor cores does the RP2040 have?",["2","1","4"],"Look at the first digit of the name.","The RP2040 has two cores. The '2' in the name stands for the number of cores."],
+  ["Which Arm processor is each core?",["Cortex-M0+","Cortex-M4","Cortex-A53"],"The '0' after the 2 points to it.","Each core is an Arm Cortex-M0+."],
+  ["What does the '4' in RP2040 tell you?",["The RAM size: about 2⁴ × 16 kB = 256 kB","There are 4 cores","There are 4 GPIO pins"],"It is about memory, using powers of two.","'4' means 2⁴ × 16 kB = 256 kB, the nearest power of two to the real 264 kB."],
+  ["What does the last '0' in RP2040 tell you?",["There is no on-chip flash","There is no ADC","There are no timers"],"It is about non-volatile memory.","The final '0' means there is no on-chip non-volatile (flash) memory. Flash is connected outside, through QSPI."],
+  ["How much SRAM does the RP2040 have?",["264 kB","64 kB","2 MB"],"It is arranged in 6 banks.","The RP2040 has 264 kB of SRAM in 6 banks."],
+  ["What is the maximum clock speed of the cores?",["133 MHz","16 MHz","1 GHz"],"A little more than 100 MHz.","The cores run at up to 133 MHz."],
+  ["Which USB version does the RP2040 support?",["USB 1.1 host/device","USB 3.0 only","No USB"],"It is the older, simpler USB version.","The RP2040 has a USB 1.1 controller that can be host or device."],
+  ["How many GPIO pins does the RP2040 have?",["30","16","40"],"GPIO0 to GPIO29.","There are 30 multifunction GPIO pins."],
+  ["Which GPIO pin drives the Pico's on-board LED?",["GPIO 25","GPIO 0","GPIO 13"],"Pin(__, Pin.OUT) in the blink program.","The on-board LED is on GPIO 25."],
+  ["Which is the easiest, highest-level way to program the Pico?",["MicroPython","Assembly","Register level"],"It uses simple Python commands.","MicroPython is the highest abstraction. Assembly is the lowest."],
+  ["gpio_put(25, 1); belongs to which level?",["C SDK","MicroPython","Assembly"],"It is a C function from the Pico SDK.","gpio_put() is a C SDK function. It hides the register access from you."],
+  ["At which address is the GPIO_OUT_SET register?",["0xD0000014","0x50000000","0x10000000"],"It is in the SIO block, which starts at 0xD0000000.","GPIO_OUT_SET is at 0xD0000014 in the SIO. GPIO_OUT_CLR is at 0xD0000018."],
+  ["Which logic family is the fastest of RTL, DTL and TTL?",["TTL","RTL","DTL"],"Transistors do all the work.","TTL (transistor-transistor logic) is faster than DTL and RTL."],
+  ["What makes the basic clock pulse for the chip?",["A crystal oscillator","The ADC","The watchdog"],"It vibrates at a very steady frequency.","A crystal makes the clock pulse. A PLL then multiplies it to make higher clock speeds."]
+ ]},
+/* ------------------------------------------------------------------ M2 */
+{id:"M2",tag:"Unit 1",title:"Pins, Power and GPIO",
+ blurb:"The different types of pins, the power supplies, and how a GPIO pin is connected to a peripheral.",
+ lesson:[
+  {h:"Types of pins",
+   table:{head:["Pin group","Used for"],rows:[["GPIO0 to GPIO29","General input/output, and peripherals like UART, SPI, I2C, PWM"],["GPIO26 to GPIO29","Can also be ADC inputs"],["QSPI pins (6)","The external flash memory"],["XIN / XOUT","The crystal oscillator"],["USB_DP / USB_DM","USB data lines"],["SWCLK / SWDIO","Serial Wire Debug"],["RUN","Reset: pull low to reset the chip"],["Power pins","IOVDD, DVDD, VREG_VIN, VREG_VOUT, USB_VDD, ADC_AVDD"]]},
+   key:"Pins are grouped as GPIO, QSPI flash, crystal, USB, debug, reset and power."},
+  {h:"The power pins",
+   table:{head:["Pin","Supplies","Nominal voltage"],rows:[["IOVDD","The I/O pins","3.3 V (1.8 to 3.3 V)"],["DVDD","The digital core (CPU, memory)","1.1 V"],["VREG_VIN","Input of the internal voltage regulator","1.8 to 3.3 V"],["VREG_VOUT","Output of the internal regulator","1.1 V, max 100 mA"],["USB_VDD","The USB PHY","3.3 V"],["ADC_AVDD","The ADC","3.3 V"]]},
+   analogy:"Like a house with separate water tanks for the kitchen, the garden and the bathroom. Each part gets the supply it needs.",
+   key:"The core runs at 1.1 V (DVDD). Usually VREG_VOUT is wired to DVDD."},
+  {h:"One pin, many jobs",
+   p:"Each GPIO pin can be connected to one of several internal blocks: SPI, UART, I2C, PWM, SIO (software control), PIO0, PIO1, clocks or USB. You choose the block by writing the <b>FUNC_SEL</b> field in that pin's <b>GPIOx_CTRL</b> register.",
+   analogy:"Like a TV remote's input button: the same screen can show HDMI 1, HDMI 2 or the antenna. FUNC_SEL picks the input.",
+   key:"FUNC_SEL connects an internal peripheral to a GPIO pin. SIO, PIO0 and PIO1 can reach every pin."},
+  {h:"Controlling a pin directly (SIO)",
+   p:"For simple on/off control, the CPU uses three SIO registers. In each one, bit <i>n</i> belongs to GPIO <i>n</i>.",
+   table:{head:["Register","Job"],rows:[["GPIO_OE","Output enable: 1 = the pin drives (output)"],["GPIO_OUT","The value to drive: 1 = high, 0 = low"],["GPIO_IN","Read the pin's current level"]]},
+   key:"Set the bit in GPIO_OE first, then GPIO_OUT controls the pin. For the LED, use bit 25."},
+  {h:"Keeping the chip healthy",
+   flow:["Power-on state machine: starts the clocks and releases resets in the right order at power-up","Reset control: resets the whole chip or one peripheral","SYSCTRL / SYSCFG: system settings","SYSINFO: read-only chip identification","Watchdog: resets the chip if the program hangs"],
+   analogy:"The watchdog is like a dead-man's switch on a train. If the driver (your program) stops pressing it, the train is stopped safely.",
+   key:"Watchdog = automatic reset when the program stops responding. SYSINFO = chip ID."}
+ ],
+ q:[
+  ["What is the nominal voltage of DVDD?",["1.1 V","3.3 V","5 V"],"The same as VREG_VOUT.","DVDD, the digital core supply, is 1.1 V."],
+  ["What does VREG_VOUT give out?",["1.1 V, up to 100 mA","3.3 V, up to 1 A","5 V, up to 500 mA"],"It is the output of the internal regulator that feeds the core.","VREG_VOUT is the internal regulator output: 1.1 V, 100 mA maximum."],
+  ["Which pin supplies the I/O pins?",["IOVDD","DVDD","ADC_AVDD"],"IO + VDD.","IOVDD powers the input/output pins used for outside connections."],
+  ["Which pin powers the ADC?",["ADC_AVDD","USB_VDD","VREG_VIN"],"Its name starts with ADC.","ADC_AVDD supplies the analogue-to-digital converter at 3.3 V."],
+  ["Which GPIO pins can also be ADC inputs?",["GPIO 26 to 29","GPIO 0 to 3","GPIO 10 to 13"],"The last four GPIO pins.","GPIO 26, 27, 28 and 29 can be ADC inputs."],
+  ["Which pins connect the crystal?",["XIN and XOUT","SWCLK and SWDIO","USB_DP and USB_DM"],"X for crystal (xtal).","The crystal oscillator connects to XIN and XOUT."],
+  ["Which register field connects a peripheral (like UART) to a GPIO pin?",["FUNC_SEL","GPIO_IN","CPUID"],"'Function select'.","FUNC_SEL in GPIOx_CTRL picks which internal block drives the pin."],
+  ["Which blocks can connect to every GPIO pin?",["SIO, PIO0 and PIO1","Only UART0","Only the ADC"],"They are controlled by software or state machines.","SIO, PIO0 and PIO1 can connect to all GPIO pins."],
+  ["Before GPIO_OUT can drive a pin, which register bit must be set?",["GPIO_OE","GPIO_IN","FIFO_ST"],"OE = Output Enable.","GPIO_OE enables the output driver. Without it, the pin does not drive."],
+  ["Which register lets the CPU read the level on a pin?",["GPIO_IN","GPIO_OUT","GPIO_OE"],"IN for input.","GPIO_IN gives the current state of each GPIO pin."],
+  ["Which block resets the chip when the program stops responding?",["Watchdog","SYSINFO","PLL"],"A dog that keeps watch.","The watchdog resets the chip if the system stops responding."],
+  ["Which block gives read-only chip identification?",["SYSINFO","Watchdog","Reset control"],"System information.","SYSINFO provides read-only chip ID registers."],
+  ["What starts the clocks and releases resets in order at power-up?",["Power-on state machine","The ADC","The DMA"],"It runs once, when power arrives.","The power-on state machine brings the chip up in the right order."],
+  ["Which pins are used for Serial Wire Debug?",["SWCLK and SWDIO","XIN and XOUT","GPIO 26 and 27"],"SW = Serial Wire.","SWCLK (clock) and SWDIO (data) are the 2-wire debug pins."],
+  ["How many dedicated pins connect the external QSPI flash?",["6","2","30"],"4 data lines + clock + chip select.","Six dedicated pins connect the QSPI flash: 4 data, clock and chip select."]
+ ]},
+/* ------------------------------------------------------------------ M3 */
+{id:"M3",tag:"Unit 2",title:"Bus Fabric",
+ blurb:"How the cores, DMA, memory and peripherals talk to each other, and atomic register access.",
+ lesson:[
+  {h:"The roads inside the chip",svg:"bus",
+   p:"The <b>bus fabric</b> connects the parts that ask for data (<b>masters</b>) to the parts that hold data (<b>slaves</b>). At its centre is the <b>AHB-Lite crossbar</b>. There are <b>4 masters</b>: core 0, core 1, DMA read and DMA write.",
+   analogy:"Like a city's road junction. Cars (masters) travel to buildings (slaves). Traffic signals decide who goes first.",
+   key:"4 AHB-Lite masters connect to the slaves through the crossbar."},
+  {h:"Splitter and arbiter",
+   table:{head:["","Splitter","Arbiter"],rows:[["Shape","One-to-many","Many-to-one"],["Job","Decodes the address and sends the request to the right slave","Decides which master gets the slave when several ask together"],["Think of it as","A signpost","A traffic policeman"]]},
+   key:"Splitter = where the request goes. Arbiter = who gets access."},
+  {h:"Bus priority",
+   p:"The <b>BUS_PRIORITY</b> register gives each master a priority. <b>1 = high</b>, <b>0 = low</b>. High-priority requests are served first. If two masters with the <b>same</b> priority ask together, the arbiter uses <b>round-robin</b>: each gets a turn.",
+   p2:"SRAM has <b>zero wait states</b>, so a high-priority master never slows down. A low-priority master may wait for a free cycle.",
+   key:"Priority 1 = high. Same priority = round-robin."},
+  {h:"Performance counters",
+   p:"The <b>BUSCTRL_PERFCTRx</b> counters count accesses to the crossbar's arbiters. They help you find traffic jams. Each is a <b>24-bit saturating</b> counter: when it reaches its maximum, it stops there instead of rolling back to 0.",
+   key:"Performance counters are 24-bit and saturating."},
+  {h:"The APB bridge",
+   p:"Slow peripherals (UART, SPI, I2C, timers…) sit on the <b>APB</b> bus. The <b>APB bridge</b> links the fast AHB-Lite crossbar to them.",
+   flow:["An APB access takes at least 2 cycles (setup phase + access phase)","The bridge adds 1 extra cycle to reads","The bridge adds 2 extra cycles to writes"],
+   key:"AHB-Lite is fast. APB is slower. The APB bridge joins them."},
+  {h:"Atomic register access",
+   p:"Every peripheral register block has <b>4 kB</b> of address space, and each register can be reached at four addresses. The address you use decides what the write does:",
+   table:{head:["Address","What a write does"],rows:[["Reg + 0x0000","Normal read/write"],["Reg + 0x1000","Atomic XOR: toggles the bits you write as 1"],["Reg + 0x2000","Atomic SET: makes the bits you write as 1 become 1"],["Reg + 0x3000","Atomic CLEAR: makes the bits you write as 1 become 0"]]},
+   analogy:"Normally you must read a register, change one bit and write it back. If the other core changes it in between, its change is lost. Atomic access does the change in one safe step.",
+   key:"+0x1000 XOR · +0x2000 SET · +0x3000 CLEAR. No read-modify-write needed."},
+  {h:"Narrow writes",
+   p:"RP2040 IO registers ignore the size of a write. An 8-bit or 16-bit write is treated as a full <b>32-bit</b> write, so other bits can be overwritten. To change only part of a register, use the atomic SET, CLEAR or XOR addresses.",
+   key:"Every IO register write is treated as 32 bits."}
+ ],
+ q:[
+  ["How many AHB-Lite masters are on the bus fabric?",["4","2","12"],"Core 0, core 1, DMA read, DMA write.","There are 4 masters: two cores and the DMA's read and write ports."],
+  ["Which crossbar part decides who goes first when many masters want one slave?",["Arbiter","Splitter","APB bridge"],"Many-to-one, like a referee.","The arbiter resolves contention and applies priority."],
+  ["Which crossbar part sends a master's request to the right slave?",["Splitter","Arbiter","Watchdog"],"One-to-many, like a signpost.","The splitter decodes the address and routes the request."],
+  ["In BUS_PRIORITY, the value 1 means:",["High priority","Low priority","Disabled"],"Bigger number, more important.","1 = high priority, 0 = low priority."],
+  ["Two masters with the same priority ask for the same slave. What happens?",["Round-robin: they take turns","Core 0 always wins","Both are refused"],"Everybody gets a turn.","The arbiter uses round-robin when priorities are equal."],
+  ["Why does a high-priority master never slow down when reading SRAM?",["SRAM has zero wait states","SRAM is on the APB bus","SRAM is switched off"],"It can be accessed once every clock cycle.","SRAM has zero wait states, so high-priority masters are never stalled."],
+  ["The bus performance counters are…",["24-bit saturating counters","8-bit counters that roll over","64-bit timers"],"They stop at their maximum instead of going back to 0.","BUSCTRL_PERFCTRx are 24-bit saturating counters."],
+  ["What does the APB bridge connect?",["The fast AHB-Lite bus to slow peripherals","Core 0 to core 1","USB to the ADC"],"A = Advanced, P = Peripheral.","The APB bridge joins the AHB-Lite crossbar to low-bandwidth peripherals."],
+  ["The minimum number of cycles for an APB access is…",["2","1","8"],"Setup phase + access phase.","An APB access takes at least 2 cycles."],
+  ["How much address space does each peripheral register block get?",["4 kB","1 kB","64 kB"],"The four aliases are 0x1000 apart.","Each register block has 4 kB of address space."],
+  ["A write to register + 0x1000 does what?",["Atomic XOR (toggle bits)","Atomic SET","Atomic CLEAR"],"It flips bits.","+0x1000 is atomic XOR on write."],
+  ["A write to register + 0x2000 does what?",["Atomic SET (bits become 1)","Atomic CLEAR","Normal write"],"0x1000 toggles; 0x2000 makes bits 1.","+0x2000 is atomic bitmask SET."],
+  ["A write to register + 0x3000 does what?",["Atomic CLEAR (bits become 0)","Atomic SET","Atomic XOR"],"The last alias makes bits 0.","+0x3000 is atomic bitmask CLEAR."],
+  ["Why use atomic access instead of read-modify-write?",["The other core cannot overwrite the change halfway","It uses less memory","It makes the clock faster"],"Think about two cores changing the same register.","Atomic access changes bits in one step, so two cores can't spoil each other's changes."],
+  ["You do an 8-bit write to an RP2040 IO register. How is it treated?",["As a full 32-bit write","As an 8-bit write","It is ignored"],"IO registers ignore the write size.","IO registers treat every write as 32 bits. Use atomic SET/CLEAR to change part of one."]
+ ]},
+/* ------------------------------------------------------------------ M4 */
+{id:"M4",tag:"Unit 2",title:"SIO: Single-cycle IO",
+ blurb:"The fast block next to each core: CPUID, GPIO control, spinlocks, mailboxes, divider and interpolators.",
+ lesson:[
+  {h:"What the SIO is",
+   p:"The <b>SIO</b> (single-cycle IO) is connected straight to each core through its <b>IOPORT</b>. Every SIO read or write takes exactly <b>one cycle</b>. A normal AHB-Lite bus load or store takes two. The SIO starts at address <b>0xD0000000</b>.",
+   flow:["CPUID","GPIO control","Hardware spinlocks","Inter-processor FIFOs (mailboxes)","Integer divider","Interpolators"],
+   key:"SIO = 1-cycle, deterministic access, starting at 0xD0000000. It holds the six things listed above."},
+  {h:"CPUID: which core am I?",
+   p:"<b>CPUID</b> is the first register in the SIO. Both cores read the same address, but <b>core 0 reads 0</b> and <b>core 1 reads 1</b>. One program can then choose different work for each core.",
+   key:"CPUID: core 0 reads 0, core 1 reads 1."},
+  {h:"Hardware spinlocks",
+   p:"When both cores share something (a variable, a UART), only one should use it at a time. A <b>spinlock</b> guards it: <b>reading</b> the spinlock tries to <b>claim</b> it, and <b>writing</b> any value <b>releases</b> it. The RP2040 has 32 of them.",
+   analogy:"Like the single key to a shared lab cupboard. Whoever holds the key uses the cupboard. The other waits until the key is returned.",
+   key:"Spinlock: read = claim, write = release. Use it for short critical sections."},
+  {h:"Mailboxes between the cores",
+   p:"Two <b>FIFOs</b> pass messages between the cores. One goes from core 0 to core 1, the other back. Each is <b>32 bits wide</b> and <b>8 entries deep</b>. You write to FIFO_WR, read from FIFO_RD and check FIFO_ST.",
+   table:{head:["FIFO_ST flag","Meaning"],rows:[["VLD","Incoming FIFO has valid data to read"],["RDY","Outgoing FIFO has room for more data"],["WOF","Outgoing FIFO was written while full (overflow)"],["ROE","Incoming FIFO was read while empty"]]},
+   p2:"The FIFOs raise IRQ 15 (core 0) and IRQ 16 (core 1).",
+   key:"Mailboxes: 32-bit × 8 deep. VLD = data waiting. RDY = room to send."},
+  {h:"The integer divider",
+   p:"Each core has an <b>8-cycle</b> signed/unsigned divider. Write <b>DIVIDEND</b> and <b>DIVISOR</b>. After 8 cycles, read <b>DIV_QUOTIENT</b> (the /) and <b>DIV_REMAINDER</b> (the %).",
+   key:"Divider: 8 cycles → DIV_QUOTIENT and DIV_REMAINDER."},
+  {h:"Interpolators",
+   p:"Each core has <b>two interpolators</b>, INTERP0 and INTERP1. Each lane does <b>shift → mask → sign-extend → add</b> in a single cycle. Example: ACCUM0 = 0xdeadbeef, shift right by 8 → 0x00deadbe; mask bits 7 to 4 → 0x000000b0.",
+   table:{head:["Mode","Where","What it does"],rows:[["Blend","INTERP0 only","Mixes BASE0 and BASE1 smoothly: 100 + 0.5 × (200 − 100) = 150"],["Clamp","INTERP1","Keeps the result between BASE0 (minimum) and BASE1 (maximum)"]]},
+   analogy:"Blend is like mixing two paints. Clamp is like a speed limiter that never lets you go below or above a set range.",
+   key:"Blend = mix (INTERP0). Clamp = limit to a range (INTERP1)."}
+ ],
+ q:[
+  ["How many clock cycles does every SIO access take?",["1","2","8"],"SIO = Single-cycle IO.","Every SIO read or write takes exactly one cycle."],
+  ["At which address does the SIO start?",["0xD0000000","0x50000000","0x20000000"],"GPIO_OUT_SET is at 0xD0000014.","The SIO starts at 0xD0000000."],
+  ["Each core reaches the SIO through its…",["IOPORT","APB bridge","QSPI"],"A dedicated port on the core.","Each core uses its own IOPORT for fast SIO access."],
+  ["Core 1 reads CPUID. What does it get?",["1","0","25"],"Core 0 reads 0.","CPUID returns 0 on core 0 and 1 on core 1."],
+  ["What does reading a spinlock do?",["Tries to claim the lock","Releases the lock","Resets the chip"],"Read = claim, write = release.","Reading attempts to claim. Writing any value releases it."],
+  ["Spinlocks should guard…",["Short critical sections","The whole program","Only the ADC"],"Hold the key for as little time as possible.","Use spinlocks only for short critical sections so the other core is not kept waiting."],
+  ["What is the nickname of the inter-processor FIFOs?",["Mailboxes","Spinlocks","Lanes"],"You post letters in them.","The two inter-processor FIFOs are called mailboxes."],
+  ["How deep is each inter-processor FIFO?",["8 entries","4 entries","32 entries"],"32 bits wide and … deep.","Each FIFO is 32 bits wide and 8 entries deep."],
+  ["Which FIFO_ST flag means 'the incoming FIFO has data'?",["VLD","RDY","WOF"],"Valid.","VLD = incoming FIFO contains valid data."],
+  ["Which FIFO_ST flag means 'the outgoing FIFO has room'?",["RDY","VLD","ROE"],"Ready to send.","RDY = outgoing FIFO has room for more data."],
+  ["WOF in FIFO_ST tells you that…",["The FIFO was written while full","The FIFO was read while empty","The FIFO is ready"],"W = written, O = overflow… F = full.","WOF = the outgoing FIFO was written while full at some time."],
+  ["Which IRQ numbers do the SIO FIFOs use?",["15 and 16","0 and 1","26 and 27"],"Look at the SIO lesson card.","SIO_IRQ_PROC0 is IRQ 15 and SIO_IRQ_PROC1 is IRQ 16."],
+  ["How many cycles does the SIO divider take?",["8","1","32"],"Results can be read on the 9th cycle.","The divider takes 8 cycles."],
+  ["Where do you read the remainder after a division?",["DIV_REMAINDER","DIV_QUOTIENT","DIVISOR"],"Remainder = the % result.","DIV_REMAINDER holds the remainder. DIV_QUOTIENT holds the quotient."],
+  ["Which interpolator mode smoothly mixes BASE0 and BASE1?",["Blend","Clamp","Mask"],"Like mixing paints.","Blend mode (INTERP0 only) does linear interpolation between BASE0 and BASE1."],
+  ["Which interpolator mode keeps a value between a minimum and a maximum?",["Clamp","Blend","Shift"],"A clamp holds things in place.","Clamp mode (INTERP1) limits the result to BASE0…BASE1."],
+  ["ACCUM0 = 0xdeadbeef, lane shift = 8. What is the value after the shift?",["0x00deadbe","0xdeadbe00","0x0000beef"],"Shifting right by 8 bits removes the last two hex digits.","A right shift by 8 bits moves everything two hex digits right: 0x00deadbe."]
+ ]},
+/* ------------------------------------------------------------------ M5 */
+{id:"M5",tag:"Unit 3",title:"Cortex-M0+ and Memory",
+ blurb:"The processor core's features, sleep modes, the memory map, the MPU and debugging.",
+ lesson:[
+  {h:"The Cortex-M0+ core",
+   p:"The Cortex-M0+ is a small, very energy-efficient <b>32-bit RISC</b> processor made for microcontrollers. It uses the <b>ARMv6-M Thumb</b> instruction set, where most instructions are 16 bits long.",
+   table:{head:["Feature","Detail"],rows:[["Instruction set","ARMv6-M Thumb (mostly 16-bit)"],["Multiplier","32-bit, single-cycle, in hardware"],["SysTick","24-bit system timer"],["MPU","Memory Protection Unit with 8 regions"],["Interrupts","NVIC with 26 used interrupts, 4 priority levels"],["Wake-up","WIC (Wake-up Interrupt Controller)"],["Byte order","Little-endian"],["Debug","SWD, 4 breakpoints, 2 watchpoints"]]},
+   key:"Thumb · 1-cycle multiplier · SysTick 24-bit · MPU 8 regions · little-endian."},
+  {h:"Little-endian",svg:"endian",
+   p:"Little-endian means the <b>least significant byte</b> is stored at the <b>lowest address</b>. For 0x12345678 stored at 0x1000:",
+   key:"Little end first: 0x78 goes to the lowest address."},
+  {h:"SysTick: the heartbeat",
+   p:"<b>SysTick</b> is a 24-bit timer inside the core. Set it to fire every 1 ms and your program gets a steady heartbeat. An RTOS such as FreeRTOS uses this tick to switch between tasks.",
+   analogy:"Like a school bell that rings every period. Everyone knows when to change classes.",
+   key:"SysTick = 24-bit timer for precise timekeeping and task switching."},
+  {h:"Sleeping to save power",
+   table:{head:["Instruction","Meaning"],rows:[["WFI","Wait For Interrupt: sleep until an interrupt"],["WFE","Wait For Event: sleep until an event or interrupt"],["SEV","Send Event: wake the other core"],["SLEEPONEXIT","Go back to sleep right after an interrupt handler finishes"]]},
+   p2:"On the RP2040, events are cross-wired: SEV on one core wakes the other. While asleep, the WIC watches for interrupts.",
+   key:"WFI/WFE = sleep. SEV = send an event to the other core."},
+  {h:"The memory",
+   table:{head:["Memory","Size","Notes"],rows:[["ROM","16 kB","Boot code, cannot be changed"],["SRAM0 to SRAM3","4 × 64 kB","Striped (interleaved) for faster access"],["SRAM4, SRAM5","2 × 4 kB","Not striped"],["XIP flash","up to 16 MB","External, through QSPI"]]},
+   analogy:"Striping is like having four cash counters open at once. Customers are spread across all four, so the queue moves faster.",
+   key:"264 kB SRAM = 4 × 64 kB striped + 2 × 4 kB. ROM is 16 kB."},
+  {h:"The MPU and HardFault",
+   p:"The <b>MPU</b> (Memory Protection Unit) lets you mark memory regions as read-only, no-execute and so on. It has <b>8 regions</b>, which can overlap. If code breaks a rule, a <b>HardFault</b> exception happens. This stops faulty code from overwriting important memory.",
+   key:"MPU: 8 regions. A violation causes a HardFault."},
+  {h:"Debugging",
+   flow:["Halt: stop the processor at any point","Single-step: run one instruction at a time","Breakpoints: 4 in hardware (unlimited in software)","Watchpoints: 2, stop when a memory location is accessed","Read and change registers and memory","Rescue DP: recovers a chip that has locked up"],
+   p:"All of this goes through the 2-wire <b>SWD</b> port (SWCLK, SWDIO).",
+   key:"SWD debug: 4 hardware breakpoints, 2 watchpoints, Rescue DP for a locked chip."}
+ ],
+ q:[
+  ["The Cortex-M0+ is a…",["32-bit RISC processor","8-bit CISC processor","64-bit GPU"],"It is a reduced instruction set computer.","The Cortex-M0+ is a 32-bit RISC processor."],
+  ["Which instruction set does the Cortex-M0+ use?",["ARMv6-M Thumb (mostly 16-bit)","x86","ARMv8-A 64-bit"],"Named after a finger.","It uses the ARMv6-M Thumb instruction set."],
+  ["How fast is the hardware multiplier?",["Single-cycle (32-bit)","100 cycles","There is no multiplier"],"Fast multiply is one of the features.","The Cortex-M0+ has a single-cycle 32-bit hardware multiplier."],
+  ["SysTick is a timer of how many bits?",["24","8","64"],"Same width as the bus performance counters.","SysTick is a 24-bit timer."],
+  ["What does an RTOS use the SysTick tick for?",["Switching between tasks","Measuring temperature","Talking to USB"],"The tick is the heartbeat of the scheduler.","An RTOS like FreeRTOS uses the tick to decide when to switch tasks."],
+  ["0x12345678 is stored little-endian at 0x1000. Which byte is at 0x1000?",["0x78","0x12","0x34"],"Little end first.","Little-endian puts the least significant byte (0x78) at the lowest address."],
+  ["In the same example, which byte is at 0x1003?",["0x12","0x78","0x56"],"The most significant byte goes to the highest address.","Address 0x1003 holds the most significant byte, 0x12."],
+  ["Which instruction makes a core sleep until an interrupt?",["WFI","SEV","MOV"],"Wait For Interrupt.","WFI = Wait For Interrupt."],
+  ["Which instruction wakes the other core?",["SEV","WFE","WFI"],"Send EVent.","SEV sends an event. On RP2040 the event lines are cross-wired, so it reaches the other core."],
+  ["How much ROM does the RP2040 have?",["16 kB","264 kB","2 MB"],"Small, just for boot code.","The ROM is 16 kB."],
+  ["Which SRAM banks are striped?",["SRAM0 to SRAM3","SRAM4 and SRAM5","None"],"The four big 64 kB banks.","SRAM0 to SRAM3 are striped (interleaved). SRAM4 and SRAM5 are not."],
+  ["How large can the external XIP flash be?",["Up to 16 MB","Up to 64 kB","Up to 1 GB"],"Bigger than the SRAM, but megabytes not gigabytes.","XIP flash can be up to 16 MB."],
+  ["How many regions does the Cortex-M0+ MPU have?",["8","4","26"],"Same as the number of FIFO entries.","The MPU has 8 protection regions."],
+  ["What happens when code breaks an MPU rule?",["A HardFault exception","The chip speeds up","Nothing"],"A 'hard' fault.","An MPU violation causes a HardFault."],
+  ["How many hardware breakpoints does the debug unit have?",["4","2","12"],"Twice the number of watchpoints.","4 hardware breakpoints and 2 watchpoints."],
+  ["Which debug port rescues a chip that has locked up?",["Rescue DP","APB bridge","DREQ"],"Its name says what it does.","The Rescue DP is only for recovering a locked-up chip."],
+  ["Which controller keeps watch for interrupts while the core sleeps?",["WIC","MPU","DMA"],"Wake-up Interrupt Controller.","The WIC identifies interrupts in very low-power sleep."]
+ ]},
+/* ------------------------------------------------------------------ M6 */
+{id:"M6",tag:"Unit 2–3",title:"Interrupts",
+ blurb:"What an interrupt is, how the NVIC handles it, IRQ numbers, priorities, and GPIO interrupts in MicroPython.",
+ lesson:[
+  {h:"What is an interrupt?",
+   p:"An <b>interrupt</b> is a signal that makes the processor pause what it is doing, run a special function called an <b>interrupt service routine (ISR)</b> or <b>handler</b>, and then go back to where it stopped.",
+   analogy:"A doorbell. You don't keep walking to the door to check for visitors. You do your work, and when the bell rings you answer it, then come back.",
+   key:"Interrupt → pause → run the ISR → return to the main program."},
+  {h:"Polling or interrupts?",
+   table:{head:["","Polling","Interrupts"],rows:[["How","The CPU keeps checking a flag in a loop","The hardware tells the CPU when something happens"],["CPU time","Wasted while checking","Free for other work or sleep"],["Reaction","Only when the loop checks","Straight away"],["Like","Opening the door every minute","Waiting for the doorbell"]]},
+   key:"Interrupts save CPU time and react faster than polling."},
+  {h:"What happens, step by step",
+   flow:["The main program is running","A peripheral raises its IRQ line (for example, a button is pressed)","The NVIC checks that the IRQ is enabled and compares priorities","The core saves its registers and looks up the handler address in the vector table","The ISR runs (keep it short!)","The core restores its registers and continues the main program"],
+   key:"The vector table holds the address of every handler. VTOR tells the core where the table is."},
+  {h:"The NVIC",
+   p:"Each core has its own <b>NVIC</b> (Nested Vectored Interrupt Controller).",
+   table:{head:["Word","Meaning"],rows:[["Nested","A higher-priority interrupt can interrupt a lower-priority handler"],["Vectored","Each interrupt jumps straight to its own handler"],["32 inputs","But only IRQ 0 to 25 (26 lines) are connected. IRQ 26 to 31 are tied to 0"],["Priority","4 levels per interrupt"],["NMI","One non-maskable interrupt that can never be switched off"]]},
+   p2:"Both cores receive the same IRQs, except the GPIO interrupts, which are separate for each core.",
+   key:"NVIC: 26 IRQs, 4 priority levels, nested and vectored."},
+  {h:"The RP2040 IRQ numbers",
+   table:{head:["IRQ","Source"],rows:[["0 to 3","TIMER_IRQ_0 to 3"],["4","PWM_IRQ_WRAP"],["5","USBCTRL_IRQ"],["6","XIP_IRQ"],["7, 8","PIO0_IRQ_0, PIO0_IRQ_1"],["9, 10","PIO1_IRQ_0, PIO1_IRQ_1"],["11, 12","DMA_IRQ_0, DMA_IRQ_1"],["13","IO_IRQ_BANK0 (GPIO pins)"],["14","IO_IRQ_QSPI"],["15, 16","SIO_IRQ_PROC0, SIO_IRQ_PROC1 (mailboxes)"],["17","CLOCKS_IRQ"],["18, 19","SPI0, SPI1"],["20, 21","UART0, UART1"],["22","ADC_IRQ_FIFO"],["23, 24","I2C0, I2C1"],["25","RTC_IRQ"]]},
+   key:"Remember a few: GPIO = 13, DMA = 11 and 12, SIO FIFO = 15 and 16, UART0 = 20, RTC = 25."},
+  {h:"Setting priority",
+   p:"Each IRQ has 4 priority levels, set with 2 bits. <b>00 = highest</b>, 11 = lowest. A smaller number wins. The priorities live in <b>NVIC_IPR0 to NVIC_IPR7</b>. Each 32-bit IPR register holds 4 IRQs, 8 bits each, and only the top 2 bits of each byte are used.",
+   table:{head:["NVIC_IPR0 bits","Holds priority of"],rows:[["7:6","IRQ 0"],["15:14","IRQ 1"],["23:22","IRQ 2"],["31:30","IRQ 3"]]},
+   p2:"Example from class: 0x00004080 gives IRQ 0 the bits 10 (priority 2), IRQ 1 the bits 01 (priority 1) and IRQ 2 the bits 00 (highest).",
+   key:"Priority 0 (bits 00) is the highest. Set it in NVIC_IPRn."},
+  {h:"Enable, disable, force",
+   table:{head:["Register","Write 1 to bit n to…"],rows:[["NVIC_ISER","Enable IRQ n (Interrupt Set-Enable)"],["NVIC_ICER","Disable IRQ n (Interrupt Clear-Enable)"],["NVIC_ISPR","Force IRQ n to pending (Set-Pending)"],["NVIC_ICPR","Clear a pending IRQ n (Clear-Pending)"]]},
+   p2:"To make an IRQ act as the NMI, set its bit in <b>PROC0_NMI_MASK</b> (core 0) or <b>PROC1_NMI_MASK</b> (core 1).",
+   key:"ISER = enable · ICER = disable · ISPR = force pending · ICPR = clear pending."},
+  {h:"GPIO interrupt in MicroPython",
+   p:"A GPIO pin can interrupt on four kinds of change: <b>level low</b>, <b>level high</b>, <b>falling edge</b> (high → low) and <b>rising edge</b> (low → high). A button wired to ground with a pull-up gives a <b>falling</b> edge when pressed.",
+   code:"from machine import Pin\n\nled = Pin(25, Pin.OUT)\nbutton = Pin(14, Pin.IN, Pin.PULL_UP)\n\ndef on_press(pin):          # the ISR: keep it short\n    led.toggle()\n\nbutton.irq(trigger=Pin.IRQ_FALLING, handler=on_press)\n\nwhile True:\n    pass                    # main program is free",
+   key:"pin.irq(trigger=..., handler=...) connects a pin to an ISR. Keep the ISR short."}
+ ],
+ q:[
+  ["What is an interrupt?",["A signal that makes the CPU pause and run a handler","A kind of memory","A slow clock"],"Think of a doorbell.","An interrupt pauses the main program, runs the ISR, then returns."],
+  ["The function that runs when an interrupt happens is called the…",["ISR (interrupt service routine)","Bootloader","Vector table"],"Interrupt Service Routine.","The ISR, or handler, runs when the interrupt fires."],
+  ["Compared with polling, interrupts…",["save CPU time and react straight away","waste more CPU time","only work with USB"],"Polling keeps checking in a loop.","With interrupts the CPU is free until something happens."],
+  ["In NVIC, 'Nested' means…",["A higher-priority interrupt can interrupt a running handler","Interrupts are stored in a nest of memory","Only one interrupt ever runs"],"Handlers can be inside other handlers.","Nested: higher-priority interrupts can pre-empt lower-priority handlers."],
+  ["In NVIC, 'Vectored' means…",["Each interrupt jumps to its own handler address","Interrupts are drawn as vectors","The NVIC uses floating point"],"The vector table holds addresses.","Vectored: hardware sends each interrupt to its own handler through the vector table."],
+  ["Which register tells the core where the vector table is?",["VTOR","CPUID","FIFO_ST"],"Vector Table Offset Register.","VTOR holds the location of the vector table."],
+  ["How many IRQ lines are connected to the RP2040 NVIC?",["26","32","8"],"IRQ 0 to 25.","26 lines (IRQ 0 to 25) are connected. IRQ 26 to 31 are tied to 0."],
+  ["How many priority levels does each interrupt have?",["4","2","16"],"2 priority bits.","2 bits give 4 priority levels."],
+  ["Which priority value is the highest?",["0 (bits 00)","3 (bits 11)","They are all equal"],"A smaller number wins.","Priority 0 is the highest; 3 is the lowest."],
+  ["Which registers set interrupt priorities?",["NVIC_IPR0 to NVIC_IPR7","NVIC_ISER","GPIO_OE"],"IPR = Interrupt Priority Register.","NVIC_IPRn hold the priorities, four IRQs per register."],
+  ["In NVIC_IPR0, which bits hold the priority of IRQ 2?",["23:22","7:6","15:14"],"IRQ 0 is 7:6, IRQ 1 is 15:14…","IRQ 2's priority is in bits 23:22."],
+  ["Which register enables an interrupt?",["NVIC_ISER","NVIC_ICER","NVIC_ICPR"],"Set-Enable.","Write 1 to NVIC_ISER to enable an IRQ."],
+  ["Which register forces an interrupt to become pending, even with no real signal?",["NVIC_ISPR","NVIC_ISER","NVIC_IPR0"],"Set-Pending.","Writing to NVIC_ISPR makes the IRQ pending, so its handler runs."],
+  ["Which interrupt can never be masked?",["NMI","IRQ 0","SysTick"],"Non-Maskable Interrupt.","The NMI cannot be switched off."],
+  ["How do you make IRQ 1 the NMI on core 0?",["Set bit 1 in PROC0_NMI_MASK","Write 1 to NVIC_ICER","Set GPIO_OE bit 1"],"There is one NMI mask register per core.","Setting bit n in PROC0_NMI_MASK routes IRQ n to core 0's NMI."],
+  ["What is the IRQ number for GPIO pin interrupts (bank 0)?",["13","25","5"],"IO_IRQ_BANK0.","IO_IRQ_BANK0 is IRQ 13."],
+  ["Which IRQ numbers belong to the DMA?",["11 and 12","7 and 8","20 and 21"],"DMA_IRQ_0 and DMA_IRQ_1.","DMA_IRQ_0 = 11 and DMA_IRQ_1 = 12."],
+  ["Which IRQ number is UART0?",["20","18","23"],"SPI0 is 18, SPI1 is 19, then UART0.","UART0_IRQ is 20 and UART1_IRQ is 21."],
+  ["A button connects the pin to ground and has a pull-up. Which trigger catches the press?",["Pin.IRQ_FALLING","Pin.IRQ_RISING","Pin.IN"],"Pressing pulls the pin from high to low.","Pressing makes a high-to-low (falling) edge."],
+  ["Why should an ISR be short?",["So the main program and other interrupts are not delayed","Because ISRs cannot use variables","To make the clock faster"],"While it runs, other work waits.","A long ISR blocks the main program and lower-priority interrupts."]
+ ]},
+/* ------------------------------------------------------------------ M7 */
+{id:"M7",tag:"Unit 3",title:"DMA",
+ blurb:"Direct Memory Access: moving data without the CPU, channels, registers, DREQ pacing, chaining and interrupts.",
+ lesson:[
+  {h:"Why DMA?",
+   p:"Copying data with the CPU means reading and writing one word at a time, so the CPU is busy the whole time. The <b>DMA</b> (Direct Memory Access) controller does bulk transfers for the CPU. Meanwhile the CPU can do other work or sleep to save power.",
+   analogy:"The CPU is the manager. The DMA is a delivery van. The manager writes the delivery note once, and the van does all the trips.",
+   key:"DMA moves data so the CPU doesn't have to."},
+  {h:"Three kinds of transfer",
+   table:{head:["Direction","Example"],rows:[["Memory → peripheral","Send an array of bytes out through UART TX"],["Peripheral → memory","Store ADC samples in an array"],["Memory → memory","Copy one buffer to another as fast as possible"]]},
+   p2:"The DMA has separate <b>read</b> and <b>write</b> master ports on the bus fabric. It can do one 32-bit read and one 32-bit write every clock cycle.",
+   key:"Memory→peripheral, peripheral→memory, memory→memory."},
+  {h:"12 channels, 4 registers each",
+   p:"The DMA has <b>12 independent channels</b>. Each channel is programmed with four registers. The DMA registers start at <b>0x50000000</b>, with channel blocks 0x40 apart (CH0 at +0x000, CH1 at +0x040…).",
+   table:{head:["Register","Holds"],rows:[["READ_ADDR","Address to read from next"],["WRITE_ADDR","Address to write to next"],["TRANS_COUNT","How many transfers are left"],["CTRL_TRIG","Control settings. Writing it also starts the channel"]]},
+   key:"READ_ADDR, WRITE_ADDR, TRANS_COUNT, CTRL. 12 channels. Base 0x50000000."},
+  {h:"Main CTRL fields",
+   table:{head:["Field","Meaning"],rows:[["EN","Enable the channel"],["HIGH_PRIORITY","Serve this channel first"],["DATA_SIZE","0 = byte (8-bit), 1 = halfword (16-bit), 2 = word (32-bit)"],["INCR_READ / INCR_WRITE","1 = move the address on after each transfer, 0 = stay at the same address"],["RING_SIZE / RING_SEL","Wrap the address around a ring buffer"],["CHAIN_TO","Channel to start when this one finishes"],["TREQ_SEL","Which DREQ paces the transfers"],["IRQ_QUIET","Do not raise an interrupt at the end"],["BSWAP","Swap the byte order"],["SNIFF_EN","Let the sniffer see this data"],["BUSY","Read-only: the channel is running"],["READ_ERROR / WRITE_ERROR / AHB_ERROR","A bus error happened"]]},
+   key:"DATA_SIZE sets 8/16/32 bits. INCR_READ and INCR_WRITE decide if the addresses move."},
+  {h:"Two worked examples",
+   table:{head:["Setting","Copy 100 bytes A → B","Send an array to UART0 TX"],rows:[["READ_ADDR","&A","&array"],["WRITE_ADDR","&B","UART0 data register"],["TRANS_COUNT","100","length of array"],["DATA_SIZE","0 (byte)","0 (byte)"],["INCR_READ","1","1"],["INCR_WRITE","1","0 (the UART FIFO address stays the same)"],["TREQ_SEL","0x3f (unpaced, full speed)","DREQ_UART0_TX"]]},
+   key:"A peripheral's FIFO has one fixed address, so don't increment that side."},
+  {h:"Pacing with DREQ",
+   p:"A peripheral can only take or give data at its own speed. If the DMA went as fast as possible, data would be lost. A <b>DREQ</b> (data request) signal from the peripheral tells the DMA when it is ready. You choose the DREQ with <b>TREQ_SEL</b>. Value <b>0x3f</b> means unpaced (go as fast as possible), which is used for memory-to-memory.",
+   analogy:"Like a bus conductor who only lets passengers on when there are free seats.",
+   key:"DREQ paces the DMA to the peripheral's speed. TREQ_SEL picks it."},
+  {h:"Starting a channel",
+   flow:["Write to a trigger register (for example CTRL_TRIG)","Another channel finishes and names this one in CHAIN_TO","Write to MULTI_CHAN_TRIGGER to start several channels together"],
+   p:"A trigger does <b>not</b> start the channel if EN is 0, if the channel is already running, or if the value written is 0. Writing 0 is a <b>null trigger</b>: it is used to stop at the end of a list of control blocks.",
+   key:"3 ways to start: trigger register, CHAIN_TO, MULTI_CHAN_TRIGGER."},
+  {h:"Chaining and ping-pong",
+   p:"With <b>CHAIN_TO</b>, channel A starts channel B when it finishes. If B also chains back to A, you get a <b>ping-pong</b> configuration: while one channel fills one buffer, the CPU processes the other.",
+   analogy:"Two buckets under a tap. While one fills, you empty the other. Then swap.",
+   key:"CHAIN_TO links channels. Two channels chained to each other = ping-pong."},
+  {h:"DMA interrupts and the sniffer",
+   p:"By default a channel raises an interrupt each time it finishes. The interrupt masks <b>INTE0</b> and <b>INTE1</b> route channels to <b>DMA_IRQ_0 (IRQ 11)</b> and <b>DMA_IRQ_1 (IRQ 12)</b>. Set <b>IRQ_QUIET</b> to stay silent.",
+   p2:"The <b>sniffer</b> watches the data of one channel and calculates a <b>checksum</b> (such as a CRC) while the data passes. You can then check the data for errors without the CPU reading it again.",
+   key:"DMA IRQ = 11 and 12. Sniffer = checksum on the fly."}
+ ],
+ q:[
+  ["What is the main job of the DMA?",["Move data without using the CPU","Make the clock faster","Handle debug"],"Direct Memory Access.","The DMA does bulk data transfers so the CPU is free."],
+  ["While the DMA works, the CPU can…",["Do other work or sleep","Only wait","Not use memory at all"],"That is the whole point of DMA.","The CPU is free to do other tasks or enter low-power sleep."],
+  ["Storing ADC samples into an array is which kind of transfer?",["Peripheral → memory","Memory → peripheral","Memory → memory"],"The ADC is the peripheral.","Data goes from the ADC (peripheral) into RAM (memory)."],
+  ["How many DMA channels does the RP2040 have?",["12","4","26"],"One dozen.","There are 12 independent channels."],
+  ["At which address do the DMA registers start?",["0x50000000","0xD0000000","0x10000000"],"Not the SIO (0xD…).","The DMA base address is 0x50000000."],
+  ["Which register holds the number of transfers still to do?",["TRANS_COUNT","READ_ADDR","CTRL_TRIG"],"Transfer + count.","TRANS_COUNT shows the transfers remaining."],
+  ["Which register is written last to set up and start a channel?",["CTRL_TRIG","READ_ADDR","WRITE_ADDR"],"TRIG = trigger.","Writing CTRL_TRIG sets the control bits and triggers the channel."],
+  ["DATA_SIZE = 1 means each transfer is…",["16 bits (halfword)","8 bits (byte)","32 bits (word)"],"0 = byte, 1 = …, 2 = word.","DATA_SIZE 0 = 8-bit, 1 = 16-bit, 2 = 32-bit."],
+  ["To send an array to UART TX, INCR_WRITE should be…",["0, because the UART FIFO has one fixed address","1, so the address moves","2"],"The FIFO is a single address.","Don't increment the write address when writing to a peripheral FIFO."],
+  ["What does a DREQ do?",["Lets a peripheral pace the DMA","Resets the DMA","Measures temperature"],"Data REQuest.","DREQ makes the DMA wait until the peripheral is ready."],
+  ["Which CTRL field chooses the DREQ?",["TREQ_SEL","CHAIN_TO","BSWAP"],"Transfer REQuest SELect.","TREQ_SEL selects which DREQ paces the channel."],
+  ["TREQ_SEL = 0x3f means…",["Unpaced: transfer as fast as possible","Paced by UART0","The channel is off"],"Used for memory-to-memory copies.","0x3f is the permanent request, used for unpaced transfers."],
+  ["Which of these does NOT start a channel?",["Writing 0 to the trigger register","Writing CTRL_TRIG with EN = 1","A chain from another channel"],"It is called a null trigger.","Writing 0 is a null trigger, which does not start the channel."],
+  ["Which field makes one channel start another when it finishes?",["CHAIN_TO","IRQ_QUIET","DATA_SIZE"],"Channels linked like a chain.","CHAIN_TO names the next channel to trigger."],
+  ["Two channels chained to each other make a…",["Ping-pong configuration","Round-robin","Spinlock"],"Like two buckets under a tap.","Two channels chained to each other give a ping-pong configuration."],
+  ["Which field stops a channel raising an interrupt when it finishes?",["IRQ_QUIET","HIGH_PRIORITY","EN"],"Quiet = silent.","IRQ_QUIET stops the end-of-transfer interrupt."],
+  ["What does the DMA sniffer calculate?",["A checksum (such as a CRC)","The clock speed","The core temperature"],"Used to check data for errors.","The sniffer calculates a checksum on the data as it passes."],
+  ["Which CTRL bit shows the channel is still running?",["BUSY","EN","BSWAP"],"Busy = still working.","CTRL.BUSY is set while the channel is transferring."]
+ ]},
+/* ------------------------------------------------------------------ M8 */
+{id:"M8",tag:"PIO",title:"PIO: Programmable I/O",
+ blurb:"The RP2040's special feature: small state machines that run their own programs on the pins with exact timing.",
+ lesson:[
+  {h:"Why PIO?",
+   p:"Some devices need an interface the chip has no hardware for: WS2812 (NeoPixel) LEDs, VGA video, an extra UART, or a custom sensor protocol. You could toggle pins from the CPU (<b>bit-banging</b>), but that is slow, uses the CPU fully and the timing jitters when an interrupt comes. <b>PIO</b> solves this. It has small processors made only for I/O, which run their own programs with exact timing.",
+   analogy:"Instead of the manager (CPU) doing every small job by hand, PIO is like hiring eight small robots. Each robot repeats one simple job perfectly on time, all day.",
+   key:"PIO = programmable hardware for I/O interfaces, with exact timing and no CPU load."},
+  {h:"What is inside",svg:"pio",
+   p:"The RP2040 has <b>2 PIO blocks</b> (PIO0 and PIO1). Each block has <b>4 state machines</b> (8 in total) and an <b>instruction memory of 32 instructions</b>, shared by its 4 state machines.",
+   key:"2 PIO blocks × 4 state machines = 8. Each block has 32 instruction slots."},
+  {h:"Inside one state machine",
+   table:{head:["Part","Job"],rows:[["TX FIFO","Data from the CPU/DMA waiting to go out (4 words)"],["RX FIFO","Data coming in, waiting for the CPU/DMA (4 words)"],["OSR","Output Shift Register: shifts bits out to the pins"],["ISR","Input Shift Register: collects bits in from the pins"],["X, Y","Two 32-bit scratch registers (counters, temporary values)"],["PC","Program counter"],["Clock divider","Slows the state machine's clock (16-bit integer + 8-bit fraction)"]]},
+   p2:"If you only need one direction, the two FIFOs can be <b>joined</b> into one 8-word FIFO.",
+   key:"FIFOs 4 deep (8 joined) · OSR out · ISR in · X and Y scratch."},
+  {h:"How data flows",
+   flow:["CPU or DMA writes a word into the TX FIFO","PULL moves it from the TX FIFO into the OSR","OUT shifts bits from the OSR to the pins","Pins are read by IN, which shifts bits into the ISR","PUSH moves the ISR into the RX FIFO","CPU or DMA reads the word from the RX FIFO"],
+   p:"With <b>autopull</b> and <b>autopush</b>, PULL and PUSH happen automatically when the shift register is empty or full.",
+   key:"TX FIFO → PULL → OSR → OUT → pins → IN → ISR → PUSH → RX FIFO."},
+  {h:"Only 9 instructions",
+   table:{head:["Instruction","Does"],rows:[["JMP","Jump (optionally on a condition, e.g. if X is not zero)"],["WAIT","Wait for a pin, GPIO or IRQ flag"],["IN","Shift bits into the ISR"],["OUT","Shift bits out of the OSR"],["PUSH","ISR → RX FIFO"],["PULL","TX FIFO → OSR"],["MOV","Copy between registers"],["IRQ","Set or clear an IRQ flag"],["SET","Write a value to pins or X/Y"]]},
+   p2:"Every instruction takes <b>1 clock cycle</b>. You can add a <b>delay</b> of up to 31 extra cycles, written [n]. <b>Side-set</b> changes some pins at the same time as another instruction.",
+   key:"9 instructions, 1 cycle each, delay [0…31], side-set for extra pins."},
+  {h:"Blink with PIO in MicroPython",
+   code:"import rp2\nfrom machine import Pin\n\n@rp2.asm_pio(set_init=rp2.PIO.OUT_LOW)\ndef blink():\n    set(pins, 1) [31]     # LED on, then wait 31 cycles\n    set(pins, 0) [31]     # LED off, then wait 31 cycles\n\nsm = rp2.StateMachine(0, blink, freq=2000, set_base=Pin(25))\nsm.active(1)              # the CPU is now free\n\n# Each line takes 1 + 31 = 32 cycles. At 2000 Hz the LED is on 16 ms\n# and off 16 ms. Add more nop() [31] lines to make it blink slower.",
+   p:"<b>@rp2.asm_pio</b> marks a PIO program. <b>StateMachine(0, …)</b> loads it into state machine 0. <b>freq</b> sets the clock divider. <b>set_base</b> picks the first pin that SET controls. The program loops on its own.",
+   key:"@rp2.asm_pio writes the program; rp2.StateMachine runs it."},
+  {h:"Talking to the rest of the chip",
+   p:"Each PIO block has <b>8 IRQ flags</b>. State machines use them to wait for each other, and they can raise NVIC interrupts <b>PIO0_IRQ_0/1 (IRQ 7, 8)</b> and <b>PIO1_IRQ_0/1 (IRQ 9, 10)</b>. Each FIFO also gives a <b>DREQ</b>, so the DMA can keep a state machine fed with data (for example, a whole LED strip's colours) with no CPU work.",
+   key:"PIO IRQs: 7–10. PIO FIFOs give DREQs, so DMA + PIO work together."}
+ ],
+ q:[
+  ["What problem does PIO solve?",["Making custom I/O interfaces with exact timing and no CPU load","Storing more data","Making the CPU 64-bit"],"Think of WS2812 LEDs or VGA.","PIO creates interfaces the chip has no hardware for, with exact timing."],
+  ["Toggling pins directly from the CPU to make a protocol is called…",["Bit-banging","Spinlocking","Sniffing"],"Banging bits one by one.","Bit-banging uses the CPU to toggle pins; it is slow and jitters."],
+  ["How many PIO blocks does the RP2040 have?",["2","4","8"],"PIO0 and PIO1.","There are 2 PIO blocks."],
+  ["How many state machines are in each PIO block?",["4","2","32"],"8 in total across the chip.","Each PIO block has 4 state machines."],
+  ["How many state machines are there in total?",["8","4","12"],"2 blocks × 4.","2 × 4 = 8 state machines."],
+  ["How many instructions can a PIO block's instruction memory hold?",["32","9","1024"],"Shared by its 4 state machines.","Each block has 32 instruction slots, shared by its state machines."],
+  ["How many different PIO instructions are there?",["9","32","100"],"JMP, WAIT, IN, OUT, PUSH, PULL, MOV, IRQ, SET.","PIO has just 9 instructions."],
+  ["How many clock cycles does one PIO instruction take?",["1","2","8"],"Same as an SIO access.","Every PIO instruction takes 1 cycle (plus any delay you add)."],
+  ["What is the largest delay you can add to an instruction, written [n]?",["31 cycles","8 cycles","255 cycles"],"5 bits of delay.","The delay can be up to 31 cycles (when side-set is not using those bits)."],
+  ["Which register shifts bits OUT to the pins?",["OSR (Output Shift Register)","ISR","X"],"O for output.","The OSR shifts data out to the pins."],
+  ["Which register collects bits coming IN from the pins?",["ISR (Input Shift Register)","OSR","Y"],"I for input.","The ISR collects bits in from the pins."],
+  ["Which instruction moves a word from the TX FIFO into the OSR?",["PULL","PUSH","MOV"],"You pull data in from the queue.","PULL loads the OSR from the TX FIFO."],
+  ["Which instruction moves the ISR into the RX FIFO?",["PUSH","PULL","SET"],"You push data out to the queue.","PUSH sends the ISR contents to the RX FIFO."],
+  ["How deep is each state machine FIFO (not joined)?",["4 words","8 words","32 words"],"Joined, they become 8.","Each TX and RX FIFO is 4 words deep; joining gives one 8-word FIFO."],
+  ["What are X and Y in a state machine?",["Scratch registers","Pins","FIFOs"],"Used as counters and temporary values.","X and Y are two 32-bit scratch registers."],
+  ["Which feature changes some pins at the same time as another instruction?",["Side-set","Autopush","Null trigger"],"Changing pins 'on the side'.","Side-set drives extra pins alongside the main instruction."],
+  ["In MicroPython, which decorator marks a PIO program?",["@rp2.asm_pio","@machine.irq","@pio.run"],"asm = assembly.","@rp2.asm_pio marks a function as a PIO assembly program."],
+  ["In rp2.StateMachine(0, blink, freq=2000, set_base=Pin(25)), what does freq set?",["The state machine's clock (through the divider)","The LED colour","The UART baud rate only"],"The clock divider slows the state machine down.","freq sets the clock divider, so the program runs at 2000 instructions per second."],
+  ["How can the DMA feed a PIO state machine?",["Through the PIO FIFO's DREQ","Through the watchdog","It cannot"],"The same pacing signal as other peripherals.","PIO FIFOs give DREQs, so the DMA can keep the TX FIFO filled."],
+  ["Which NVIC IRQs belong to PIO0?",["7 and 8","11 and 12","15 and 16"],"PIO1 is 9 and 10.","PIO0_IRQ_0 = 7 and PIO0_IRQ_1 = 8."]
+ ]}
 ];
 
+const GLOSSARY = [
+ ["ADC","Analogue-to-Digital Converter. RP2040: 4 channels, 12-bit, 500 ksps, on GPIO 26–29.","M1"],
+ ["AHB-Lite","The fast main bus that the crossbar is built on.","M3"],
+ ["APB","Advanced Peripheral Bus: slower bus for UART, SPI, I2C and similar.","M3"],
+ ["APB bridge","Joins the fast AHB-Lite crossbar to the APB peripherals.","M3"],
+ ["Arbiter","Crossbar part that decides which master gets a slave (many-to-one).","M3"],
+ ["Atomic access","Change register bits in one step: +0x1000 XOR, +0x2000 SET, +0x3000 CLEAR.","M3"],
+ ["Autopull / autopush","PIO refills the OSR or empties the ISR automatically.","M8"],
+ ["Bit-banging","Making a protocol by toggling pins from the CPU.","M8"],
+ ["Blend mode","Interpolator mode on INTERP0 that mixes BASE0 and BASE1.","M4"],
+ ["Breakpoint","Stops the program at an instruction. RP2040 has 4 in hardware.","M5"],
+ ["BUS_PRIORITY","Register that gives each bus master high (1) or low (0) priority.","M3"],
+ ["CHAIN_TO","DMA field: channel to start when this one finishes.","M7"],
+ ["Clamp mode","Interpolator mode on INTERP1 that limits a value to BASE0…BASE1.","M4"],
+ ["Cortex-M0+","The Arm 32-bit RISC core used twice in the RP2040.","M5"],
+ ["CPUID","SIO register: core 0 reads 0, core 1 reads 1.","M4"],
+ ["Crossbar","The AHB-Lite switch that connects 4 masters to the slaves.","M3"],
+ ["DATA_SIZE","DMA field: 0 = 8-bit, 1 = 16-bit, 2 = 32-bit transfers.","M7"],
+ ["DMA","Direct Memory Access: 12 channels that move data without the CPU.","M7"],
+ ["DREQ","Data request: a peripheral's signal that paces the DMA.","M7"],
+ ["DVDD","Digital core supply, 1.1 V.","M2"],
+ ["FIFO","First-In First-Out queue. The SIO mailboxes are 8 deep; PIO FIFOs are 4 deep.","M4"],
+ ["FUNC_SEL","GPIOx_CTRL field that connects a peripheral to a GPIO pin.","M2"],
+ ["GPIO","General-Purpose Input/Output pin. RP2040 has 30.","M2"],
+ ["GPIO_OE","SIO register: output enable for each pin.","M2"],
+ ["HardFault","Exception raised by serious errors, such as an MPU violation.","M5"],
+ ["Interpolator","SIO unit that does shift, mask and add in one cycle. 2 per core.","M4"],
+ ["Interrupt","A signal that makes the CPU pause and run a handler (ISR).","M6"],
+ ["IOVDD","Supply for the I/O pins (1.8–3.3 V).","M2"],
+ ["IRQ","Interrupt request line. RP2040 uses IRQ 0 to 25.","M6"],
+ ["ISR (interrupt)","Interrupt Service Routine: the handler that runs on an interrupt.","M6"],
+ ["ISR (PIO)","Input Shift Register in a PIO state machine.","M8"],
+ ["Little-endian","Least significant byte at the lowest address.","M5"],
+ ["Mailbox","Nickname for the SIO inter-processor FIFOs (32-bit × 8).","M4"],
+ ["MicroPython","Python for microcontrollers. Highest level for programming the Pico.","M1"],
+ ["MPU","Memory Protection Unit. 8 regions.","M5"],
+ ["NMI","Non-Maskable Interrupt: cannot be switched off.","M6"],
+ ["NVIC","Nested Vectored Interrupt Controller, one per core.","M6"],
+ ["NVIC_IPRn","Registers that hold interrupt priorities (4 IRQs each).","M6"],
+ ["NVIC_ISER / ICER","Enable / disable an interrupt.","M6"],
+ ["NVIC_ISPR / ICPR","Force / clear a pending interrupt.","M6"],
+ ["OSR","Output Shift Register in a PIO state machine.","M8"],
+ ["PIO","Programmable I/O: 2 blocks × 4 state machines.","M8"],
+ ["Ping-pong","Two DMA channels chained to each other.","M7"],
+ ["PLL","Phase-Locked Loop: multiplies the crystal frequency to make fast clocks.","M1"],
+ ["Polling","Checking a flag again and again in a loop.","M6"],
+ ["QSPI","Quad SPI: 4-data-line link to the external flash.","M1"],
+ ["Rescue DP","Debug port used only to recover a locked-up chip.","M5"],
+ ["Round-robin","Taking turns. Used when bus masters have equal priority.","M3"],
+ ["Side-set","PIO feature that changes pins alongside another instruction.","M8"],
+ ["SIO","Single-cycle IO block at 0xD0000000.","M4"],
+ ["Sniffer","DMA hardware that calculates a checksum on passing data.","M7"],
+ ["Spinlock","SIO lock: read to claim, write to release.","M4"],
+ ["Splitter","Crossbar part that routes a request to the right slave (one-to-many).","M3"],
+ ["SRAM","264 kB of working memory: 4 × 64 kB striped + 2 × 4 kB.","M5"],
+ ["State machine","One of the 8 small processors inside PIO.","M8"],
+ ["SWD","Serial Wire Debug, the 2-wire debug port (SWCLK, SWDIO).","M5"],
+ ["SysTick","24-bit timer inside the Cortex-M0+.","M5"],
+ ["Thumb","The ARMv6-M instruction set (mostly 16-bit) used by the Cortex-M0+.","M5"],
+ ["TRANS_COUNT","DMA register: number of transfers left.","M7"],
+ ["TREQ_SEL","DMA field that chooses the DREQ. 0x3f = unpaced.","M7"],
+ ["TTL","Transistor-Transistor Logic, the fastest of RTL/DTL/TTL.","M1"],
+ ["VTOR","Vector Table Offset Register: where the vector table is.","M6"],
+ ["Watchdog","Resets the chip when the program stops responding.","M2"],
+ ["Watchpoint","Stops the program when a memory address is accessed. RP2040 has 2.","M5"],
+ ["WFE / WFI / SEV","Wait For Event / Wait For Interrupt / Send Event.","M5"],
+ ["WIC","Wake-up Interrupt Controller: watches for interrupts during deep sleep.","M5"],
+ ["XIP","Execute In Place: run code straight from the external flash.","M1"]
+];
+
+</script>
+<script>
+const SVG={
+name:`<svg viewBox="0 0 440 150" role="img" aria-label="RP2040 name decoded">
+ <rect class="ac" x="20" y="14" width="80" height="44" rx="8"/><text class="t-in" x="60" y="42" text-anchor="middle" font-size="20">RP</text>
+ <rect class="cu" x="112" y="14" width="64" height="44" rx="8"/><text class="t-b" x="144" y="43" text-anchor="middle" font-size="22">2</text>
+ <rect class="cu" x="188" y="14" width="64" height="44" rx="8"/><text class="t-b" x="220" y="43" text-anchor="middle" font-size="22">0</text>
+ <rect class="cu" x="264" y="14" width="64" height="44" rx="8"/><text class="t-b" x="296" y="43" text-anchor="middle" font-size="22">4</text>
+ <rect class="cu" x="340" y="14" width="64" height="44" rx="8"/><text class="t-b" x="372" y="43" text-anchor="middle" font-size="22">0</text>
+ <text x="60" y="82" text-anchor="middle" class="t-sm">Raspberry Pi</text>
+ <text x="144" y="82" text-anchor="middle">2 cores</text>
+ <text x="220" y="82" text-anchor="middle">Cortex</text><text x="220" y="98" text-anchor="middle">-M0+</text>
+ <text x="296" y="82" text-anchor="middle">2⁴×16 kB</text><text x="296" y="98" text-anchor="middle">≈ 256 kB</text>
+ <text x="372" y="82" text-anchor="middle">no flash</text><text x="372" y="98" text-anchor="middle">on chip</text>
+ <text x="220" y="136" text-anchor="middle" class="t-sm">cores · core type · RAM · non-volatile memory</text></svg>`,
+bus:`<svg viewBox="0 0 460 250" role="img" aria-label="Four masters connect through the crossbar to the slaves">
+ <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="arr" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+ <text x="60" y="18" text-anchor="middle" class="t-sm">MASTERS (ask)</text>
+ <rect class="cu" x="10" y="28" width="100" height="36" rx="7"/><text x="60" y="51" text-anchor="middle">Core 0</text>
+ <rect class="cu" x="10" y="78" width="100" height="36" rx="7"/><text x="60" y="101" text-anchor="middle">Core 1</text>
+ <rect class="cu" x="10" y="128" width="100" height="36" rx="7"/><text x="60" y="151" text-anchor="middle">DMA read</text>
+ <rect class="cu" x="10" y="178" width="100" height="36" rx="7"/><text x="60" y="201" text-anchor="middle">DMA write</text>
+ <rect class="ac" x="160" y="40" width="120" height="164" rx="10"/>
+ <text class="t-in" x="220" y="108" text-anchor="middle">AHB-Lite</text><text class="t-in" x="220" y="126" text-anchor="middle">crossbar</text>
+ <text class="t-in" x="220" y="152" text-anchor="middle" font-size="11">splitters + arbiters</text>
+ <path class="ln" d="M110 46 H158" marker-end="url(#ah)"/><path class="ln" d="M110 96 H158" marker-end="url(#ah)"/>
+ <path class="ln" d="M110 146 H158" marker-end="url(#ah)"/><path class="ln" d="M110 196 H158" marker-end="url(#ah)"/>
+ <text x="390" y="18" text-anchor="middle" class="t-sm">SLAVES (answer)</text>
+ <rect class="bx" x="330" y="28" width="120" height="30" rx="7"/><text x="390" y="48" text-anchor="middle">ROM</text>
+ <rect class="bx" x="330" y="66" width="120" height="30" rx="7"/><text x="390" y="86" text-anchor="middle">SRAM 0–5</text>
+ <rect class="bx" x="330" y="104" width="120" height="30" rx="7"/><text x="390" y="124" text-anchor="middle">XIP flash</text>
+ <rect class="bx" x="330" y="142" width="120" height="30" rx="7"/><text x="390" y="162" text-anchor="middle">APB bridge</text>
+ <rect class="bx" x="330" y="180" width="120" height="30" rx="7"/><text x="390" y="200" text-anchor="middle">AHB peripherals</text>
+ <text x="390" y="236" text-anchor="middle" class="t-sm">APB → UART, SPI, I2C, PWM…</text>
+ <path class="ln" d="M280 43 H328" marker-end="url(#ah)"/><path class="ln" d="M280 81 H328" marker-end="url(#ah)"/>
+ <path class="ln" d="M280 119 H328" marker-end="url(#ah)"/><path class="ln" d="M280 157 H328" marker-end="url(#ah)"/>
+ <path class="ln" d="M280 195 H328" marker-end="url(#ah)"/></svg>`,
+endian:`<svg viewBox="0 0 440 140" role="img" aria-label="0x12345678 stored little-endian">
+ <text x="10" y="22" class="t-b">Value: 0x12 34 56 78</text>
+ <text x="10" y="56" class="t-sm">Address</text><text x="10" y="98" class="t-sm">Byte</text>
+ <rect class="cu" x="90" y="70" width="80" height="40" rx="6"/><text x="130" y="96" text-anchor="middle" class="t-b">0x78</text><text x="130" y="56" text-anchor="middle">0x1000</text>
+ <rect class="bx" x="180" y="70" width="80" height="40" rx="6"/><text x="220" y="96" text-anchor="middle">0x56</text><text x="220" y="56" text-anchor="middle">0x1001</text>
+ <rect class="bx" x="270" y="70" width="80" height="40" rx="6"/><text x="310" y="96" text-anchor="middle">0x34</text><text x="310" y="56" text-anchor="middle">0x1002</text>
+ <rect class="bx" x="360" y="70" width="70" height="40" rx="6"/><text x="395" y="96" text-anchor="middle">0x12</text><text x="395" y="56" text-anchor="middle">0x1003</text>
+ <text x="130" y="130" text-anchor="middle" class="t-sm">lowest address</text><text x="395" y="130" text-anchor="middle" class="t-sm">highest</text></svg>`,
+pio:`<svg viewBox="0 0 460 250" role="img" aria-label="Inside a PIO block">
+ <defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="arr" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+ <rect class="bx" x="80" y="10" width="290" height="230" rx="12"/>
+ <text x="225" y="30" text-anchor="middle" class="t-b">PIO0 (PIO1 is the same)</text>
+ <rect class="cu" x="96" y="42" width="258" height="34" rx="7"/><text x="225" y="64" text-anchor="middle">Instruction memory: 32 slots, shared</text>
+ <g><rect class="ac" x="96" y="88" width="120" height="66" rx="8"/><text class="t-in" x="156" y="110" text-anchor="middle">SM 0</text><text class="t-in" x="156" y="128" text-anchor="middle" font-size="11">TX/RX FIFO</text><text class="t-in" x="156" y="144" text-anchor="middle" font-size="11">OSR ISR X Y</text></g>
+ <g><rect class="ac" x="234" y="88" width="120" height="66" rx="8"/><text class="t-in" x="294" y="110" text-anchor="middle">SM 1</text><text class="t-in" x="294" y="128" text-anchor="middle" font-size="11">TX/RX FIFO</text><text class="t-in" x="294" y="144" text-anchor="middle" font-size="11">OSR ISR X Y</text></g>
+ <g><rect class="ac" x="96" y="164" width="120" height="66" rx="8"/><text class="t-in" x="156" y="186" text-anchor="middle">SM 2</text><text class="t-in" x="156" y="204" text-anchor="middle" font-size="11">TX/RX FIFO</text><text class="t-in" x="156" y="220" text-anchor="middle" font-size="11">OSR ISR X Y</text></g>
+ <g><rect class="ac" x="234" y="164" width="120" height="66" rx="8"/><text class="t-in" x="294" y="186" text-anchor="middle">SM 3</text><text class="t-in" x="294" y="204" text-anchor="middle" font-size="11">TX/RX FIFO</text><text class="t-in" x="294" y="220" text-anchor="middle" font-size="11">OSR ISR X Y</text></g>
+ <text x="38" y="122" text-anchor="middle" class="t-b">CPU</text><text x="38" y="140" text-anchor="middle" class="t-sm">or DMA</text>
+ <path class="ln" d="M60 128 H94" marker-end="url(#ah2)"/>
+ <text x="420" y="122" text-anchor="middle" class="t-b">GPIO</text><text x="420" y="140" text-anchor="middle" class="t-sm">pins</text>
+ <path class="ln" d="M356 128 H396" marker-end="url(#ah2)"/></svg>`
+};
+
 const SCORE_URL=(window.LAB_CONFIG&&window.LAB_CONFIG.scoreUrl)||"";
-const STORE="rp2040-lab-v1";
+const STORE="rp2040-lab-v2";
 function load(){try{return JSON.parse(localStorage.getItem(STORE))||{}}catch(e){return {}}}
 function save(){try{localStorage.setItem(STORE,JSON.stringify(saved))}catch(e){}}
-let saved=load(); saved.best=saved.best||{};
+let saved=load(); saved.best=saved.best||{}; saved.read=saved.read||{};
+try{const old=JSON.parse(localStorage.getItem("rp2040-lab-v1")||"{}");if(!saved.name&&old.name)saved.name=old.name;if(!saved.roll&&old.roll)saved.roll=old.roll;if(old.pending&&!saved.pending)saved.pending=old.pending}catch(e){}
 let S={screen:"home"};
 const app=document.getElementById("app");
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const go=f=>{f();window.scrollTo(0,0)};
+const modIndex=id=>MODULES.findIndex(m=>m.id===id);
+function isDone(m){const b=saved.best[m.id];return !!b}
+function suggested(){const i=MODULES.findIndex(m=>!isDone(m));return i}
 
-function boardHTML(u,mastered,cur){
-  const n=u.q.length;
-  let pins="";for(let i=0;i<n;i++)pins+=`<span class="pin${mastered.has(i)?" on":""}${cur===i?" now":""}" title="Question ${i+1}"></span>`;
-  return `<div class="board"><div class="board-top"><span class="chipname">RP2040 · ${u.name.toUpperCase()}</span><span class="label">${mastered.size} of ${n} pins lit</span></div><div class="pins" aria-label="${mastered.size} of ${n} questions learnt">${pins}</div></div>`;
-}
-
+/* ---------------- home ---------------- */
 function home(){
   S={screen:"home"};
-  const name=saved.name||"",roll=saved.roll||"";
-  let units=UNITS.map((u,i)=>{
-    const b=saved.best[u.id];
-    let mini="";for(let k=0;k<u.q.length;k++)mini+=`<i class="${b&&k<b.first?"on":""}"></i>`;
-    const status=b?`Best: ${b.first} of ${u.q.length} right first time`:"Not started yet";
-    return `<div class="card unit"><div class="meta"><span class="label">${u.name} · ${u.q.length} questions</span><h3>${esc(u.title)}</h3><span class="muted">${status}</span><div class="mini">${mini}</div></div>
-    <div class="btns"><button class="ghost" data-learn="${i}">Read the facts</button><button class="primary" data-play="${i}">${b?"Play again":"Start"}</button></div></div>`}).join("");
+  const done=MODULES.filter(isDone).length, sug=suggested();
+  const groups=[["Unit 1",["M1","M2"]],["Unit 2",["M3","M4"]],["Unit 3",["M5"]],["Interrupts, DMA and PIO",["M6","M7","M8"]]];
+  const modCard=id=>{const i=modIndex(id),m=MODULES[i],b=saved.best[m.id];
+    let mini="";for(let k=0;k<m.q.length;k++)mini+=`<i class="${b&&k<b.first?"on":""}"></i>`;
+    const status=b?`Best: ${b.first} of ${m.q.length} right first time`:(saved.read[m.id]?"Lesson read · practice not done yet":"Not started");
+    return `<div class="card mod${b?" done":""}"><span class="num">${b?"✓":m.id}</span>
+      <div class="meta"><span class="label">${esc(m.tag)} · ${m.lesson.length} lesson cards · ${m.q.length} questions</span>
+      <h3>${esc(m.title)}${i===sug?'<span class="badge">Do this next</span>':""}</h3><span class="muted">${esc(m.blurb)}</span>
+      <span class="muted" style="font-size:.9rem">${status}</span><div class="mini">${mini}</div></div>
+      <div class="btns"><button class="${b?"ghost":"primary"}" data-learn="${i}">${saved.read[m.id]?"Read again":"1. Learn"}</button><button class="${b?"primary":"ghost"}" data-play="${i}">${b?"Practise again":"2. Practise"}</button></div></div>`};
   app.innerHTML=`
   <header style="display:flex;flex-direction:column;gap:6px">
     <span class="label">U21BM501 · Microcontroller and its Applications</span>
     <h1>RP2040 Practice Lab</h1>
-    <p class="muted">Practise on your own, at your own speed. Every right answer lights one pin on the chip. If you get a question wrong, you will see it again later, until you know it.</p>
+    <p class="muted">Learn one topic at a time. First read the short lesson cards, then practise. Every right answer lights a pin. A question you get wrong comes back until you know it.</p>
   </header>
-  <div class="card"><div class="who"><div class="fld"><label for="nm" class="label">Your name</label><input type="text" id="nm" placeholder="e.g. Priya S" value="${esc(name)}" autocomplete="off" maxlength="60"></div>
-  <div class="fld"><label for="rl" class="label">Roll number</label><input type="text" id="rl" placeholder="e.g. 23BM045" value="${esc(roll)}" autocomplete="off" maxlength="20"></div></div>
-  <p class="err" id="err" hidden>Type your name and roll number first, so your teacher gets your score.</p></div>
+  <div class="card"><div class="who"><div class="fld"><label for="nm" class="label">Your name</label><input type="text" id="nm" placeholder="e.g. Priya S" value="${esc(saved.name||"")}" autocomplete="off" maxlength="60"></div>
+  <div class="fld"><label for="rl" class="label">Roll number</label><input type="text" id="rl" placeholder="e.g. 23BM045" value="${esc(saved.roll||"")}" autocomplete="off" maxlength="20"></div></div>
+  <p class="err" id="err" hidden>Type your name and roll number first, so your teacher gets your score.</p>
+  <div class="overall"><span class="label">${done} of ${MODULES.length} topics done</span><div class="bar"><span style="width:${done/MODULES.length*100}%"></span></div></div></div>
   ${pendingNote()}
-  <div class="units">${units}</div>
-  <div class="card"><h3>How to play</h3>
-  <ol style="margin:0;padding-left:1.2rem;display:flex;flex-direction:column;gap:6px">
-   <li>Pick a unit. Start with Unit 1 if you are not sure.</li>
-   <li>Tap <b>Read the facts</b> first if you want to revise before you play.</li>
-   <li>Choose one of three answers. Stuck? Tap <b>Show a hint</b>.</li>
-   <li>Read the short explanation after every answer, even when you are right.</li>
-   <li>When all the pins are lit, show the result screen to your teacher.</li>
-  </ol></div>`;
+  ${groups.map(([g,ids])=>`<section class="group"><span class="label">${g}</span><div class="mods">${ids.map(modCard).join("")}</div></section>`).join("")}
+  <section class="group"><span class="label">Revise everything</span>
+   <div class="card mod"><span class="num">Mix</span><div class="meta"><h3>Mixed revision</h3><span class="muted">20 random questions from all 8 topics. Good practice before a test.</span></div>
+   <div class="btns"><button class="primary" id="mix">Start</button></div></div>
+   <div class="card mod"><span class="num">A–Z</span><div class="meta"><h3>Glossary</h3><span class="muted">${GLOSSARY.length} words and short forms explained in plain English.</span></div>
+   <div class="btns"><button class="ghost" id="glo">Open</button></div></div>
+  </section>`;
   const nm=document.getElementById("nm"),rl=document.getElementById("rl");
   nm.addEventListener("input",()=>{saved.name=nm.value.trim();save()});
   rl.addEventListener("input",()=>{saved.roll=rl.value.trim().toUpperCase();save()});
-  const ready=()=>{if(saved.name&&saved.roll)return true;document.getElementById("err").hidden=false;(saved.name?rl:nm).focus();return false};
-  app.querySelectorAll("[data-play]").forEach(b=>b.onclick=()=>{if(ready())start(+b.dataset.play)});
-  app.querySelectorAll("[data-learn]").forEach(b=>b.onclick=()=>{if(ready())learn(+b.dataset.learn)});
+  const ready=()=>{if(saved.name&&saved.roll)return true;const e=document.getElementById("err");e.hidden=false;(saved.name?rl:nm).focus();e.scrollIntoView({block:"center"});return false};
+  app.querySelectorAll("[data-play]").forEach(b=>b.onclick=()=>{if(ready())go(()=>start(+b.dataset.play))});
+  app.querySelectorAll("[data-learn]").forEach(b=>b.onclick=()=>{if(ready())go(()=>lesson(+b.dataset.learn,0))});
+  document.getElementById("mix").onclick=()=>{if(ready())go(startMix)};
+  document.getElementById("glo").onclick=()=>go(()=>glossary(""));
   flushPending();
 }
 
-function learn(ui){
-  const u=UNITS[ui];S={screen:"learn",ui};
-  app.innerHTML=`<div class="top-nav"><button class="ghost" id="back">← All units</button><span class="label">${u.name}</span></div>
-  <div class="card pop"><span class="label">Read these ${u.q.length} facts slowly</span><h2>${esc(u.title)}</h2>
-  <ol class="facts">${u.q.map(q=>`<li><span>${esc(q[3])}</span></li>`).join("")}</ol>
-  <div class="row"><span class="spacer"></span><button class="primary" id="go">I'm ready, start the game</button></div></div>`;
-  document.getElementById("back").onclick=home;document.getElementById("go").onclick=()=>start(ui);
-  window.scrollTo(0,0);
+/* ---------------- lesson ---------------- */
+function lessonCard(c){
+  let h="";
+  if(c.p)h+=`<p>${c.p}</p>`;
+  if(c.svg)h+=`<div class="dia">${SVG[c.svg]}</div>`;
+  if(c.table)h+=`<div class="tbl"><table><thead><tr>${c.table.head.map(x=>`<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>${c.table.rows.map(r=>`<tr>${r.map(x=>`<td>${esc(x)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+  if(c.flow)h+=`<ol class="flow">${c.flow.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`;
+  if(c.p2)h+=`<p>${c.p2}</p>`;
+  if(c.code)h+=`<pre><code>${esc(c.code)}</code></pre>`;
+  if(c.analogy)h+=`<div class="analogy"><span class="label">Think of it like this</span><p>${esc(c.analogy)}</p></div>`;
+  if(c.key)h+=`<div class="key"><span class="label">Remember</span><p>${esc(c.key)}</p></div>`;
+  return h;
+}
+function lesson(mi,step){
+  const m=MODULES[mi],n=m.lesson.length,c=m.lesson[step];
+  S={screen:"lesson",mi,step};
+  const last=step===n-1;
+  app.innerHTML=`<div class="top-nav"><button class="ghost" id="back">← All topics</button><span class="label">${esc(m.tag)} · ${esc(m.title)}</span></div>
+  <div class="card pop">
+    <div class="row"><span class="label">Lesson card ${step+1} of ${n}</span><span class="spacer"></span><div class="dots">${m.lesson.map((_,i)=>`<i class="${i<=step?"on":""}"></i>`).join("")}</div></div>
+    <h2>${esc(c.h)}</h2>
+    <div class="lesson-body">${lessonCard(c)}</div>
+    <div class="row">${step>0?`<button class="ghost" id="prev">← Back</button>`:""}<span class="spacer"></span>
+    ${last?`<button class="primary" id="next">Start practice →</button>`:`<button class="primary" id="next">Next card →</button>`}</div>
+  </div>
+  ${last?"":`<p class="muted" style="text-align:center"><button class="link" id="skip">I know this already, go to practice</button></p>`}`;
+  document.getElementById("back").onclick=()=>go(home);
+  const p=document.getElementById("prev");if(p)p.onclick=()=>go(()=>lesson(mi,step-1));
+  document.getElementById("next").onclick=()=>{if(last){saved.read[m.id]=true;save();go(()=>start(mi))}else go(()=>lesson(mi,step+1))};
+  const sk=document.getElementById("skip");if(sk)sk.onclick=()=>go(()=>start(mi));
 }
 
-function start(ui){
-  const u=UNITS[ui];
-  S={screen:"play",ui,queue:shuffle(u.q.map((_,i)=>i)),mastered:[],firstTry:[],tried:[],hints:0,mistakes:0,t0:Date.now(),answered:false,hintShown:false,opts:null};
+/* ---------------- glossary ---------------- */
+function glossary(qs){
+  S={screen:"glossary"};
+  app.innerHTML=`<div class="top-nav"><button class="ghost" id="back">← All topics</button><span class="label">Glossary</span></div>
+  <div class="card"><h2>Glossary</h2><label for="gs" class="label">Search a word</label><input type="search" id="gs" placeholder="e.g. DREQ, spinlock, NVIC" value="${esc(qs)}" autocomplete="off"><ul class="gl" id="gl"></ul></div>`;
+  const draw=()=>{const v=document.getElementById("gs").value.trim().toLowerCase();
+    const rows=GLOSSARY.filter(g=>!v||g[0].toLowerCase().includes(v)||g[1].toLowerCase().includes(v));
+    document.getElementById("gl").innerHTML=rows.length?rows.map(g=>{const mi=modIndex(g[2]);return `<li><span class="t">${esc(g[0])}</span><span>${esc(g[1])} <button class="link" data-l="${mi}">${esc(MODULES[mi].title)}</button></span></li>`}).join(""):`<li><span></span><span class="muted">No word matches "${esc(v)}". Try a shorter word.</span></li>`;
+    document.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>go(()=>lesson(+b.dataset.l,0)));};
+  document.getElementById("gs").addEventListener("input",draw);draw();
+  document.getElementById("back").onclick=()=>go(home);
+}
+
+/* ---------------- practice ---------------- */
+function boardHTML(title,n,mastered,cur){
+  let pins="";for(let i=0;i<n;i++)pins+=`<span class="pin${mastered.has(i)?" on":""}${cur===i?" now":""}"></span>`;
+  return `<div class="board"><div class="board-top"><span class="chipname">RP2040 · ${esc(title).toUpperCase()}</span><span class="label">${mastered.size} of ${n} pins lit</span></div><div class="pins" aria-label="${mastered.size} of ${n} questions learnt">${pins}</div></div>`;
+}
+function startSet(set){
+  S={screen:"play",set,queue:shuffle(set.q.map((_,i)=>i)),mastered:[],firstTry:[],tried:[],usedHint:[],hints:0,mistakes:0,t0:Date.now(),answered:false,opts:null};
   ask();
 }
-
+function start(mi){const m=MODULES[mi];startSet({id:m.id,mi,title:m.title,tag:m.tag,q:m.q})}
+function startMix(){
+  const all=[];MODULES.forEach((m,mi)=>m.q.forEach(q=>all.push([...q,mi])));
+  startSet({id:"MIX",mi:-1,title:"Mixed revision",tag:"All topics",q:shuffle(all).slice(0,20)});
+}
 function ask(){
-  const u=UNITS[S.ui];const qi=S.queue[0];const q=u.q[qi];
+  const q=S.set.q[S.queue[0]];
   if(!S.opts)S.opts=shuffle(q[1].map((t,i)=>({t,ok:i===0})));
-  S.answered=false;S.hintShown=false;S.pick=null;S.again=S.tried.includes(qi);
+  S.answered=false;S.hintShown=false;S.pick=null;S.again=S.tried.includes(S.queue[0]);
   render();
 }
-
 function render(){
-  const u=UNITS[S.ui];const qi=S.queue[0];const q=u.q[qi];const m=new Set(S.mastered);
-  const again=S.again;
-  let opts=S.opts.map((o,i)=>{
-    let cls="opt";
-    if(S.answered){if(o.ok)cls+=" right";else if(S.pick===i)cls+=" wrong";else cls+=" dim"}
+  const set=S.set,qi=S.queue[0],q=set.q[qi],m=new Set(S.mastered);
+  const opts=S.opts.map((o,i)=>{let cls="opt";if(S.answered){if(o.ok)cls+=" right";else if(S.pick===i)cls+=" wrong";else cls+=" dim"}
     return `<button class="${cls}" data-o="${i}" ${S.answered?"disabled":""}><span class="k">${i+1}</span><span>${esc(o.t)}</span></button>`}).join("");
+  const srcMi=q[4]!==undefined?q[4]:set.mi;
   let fb="";
-  if(S.answered){
-    const ok=S.opts[S.pick].ok;
-    fb=`<div class="feedback ${ok?"ok":"no"} pop" role="status"><strong>${ok?"Correct!":"Not this time. The answer is: "+esc(S.opts.find(o=>o.ok).t)}</strong><span>${esc(q[3])}</span>${ok?"":"<span class='muted'>This question will come back later. You will get it next time.</span>"}</div>
-    <div class="row"><span class="spacer"></span><button class="primary" id="next">${S.queue.length===1&&ok?"See my result":"Next question →"}</button></div>`;
-  }
-  app.innerHTML=`<div class="top-nav"><button class="ghost" id="back">← All units</button><span class="label">${esc(u.title)}</span></div>
-  ${boardHTML(u,m,qi)}
+  if(S.answered){const ok=S.opts[S.pick].ok;
+    fb=`<div class="feedback ${ok?"ok":"no"} pop" role="status"><strong>${ok?"Correct!":"Not this time. The answer is: "+esc(S.opts.find(o=>o.ok).t)}</strong><span>${esc(q[3])}</span>${ok?"":`<span class="muted">This question will come back in a few turns.</span>`}</div>
+    <div class="row">${ok?"":`<button class="ghost" id="relearn">Read the ${esc(MODULES[srcMi].title)} lesson</button>`}<span class="spacer"></span><button class="primary" id="next">${S.queue.length===1&&ok?"See my result":"Next question →"}</button></div>`}
+  app.innerHTML=`<div class="top-nav"><button class="ghost" id="back">← All topics</button><span class="label">${esc(set.tag)} · ${esc(set.title)}</span></div>
+  ${boardHTML(set.title,set.q.length,m,qi)}
   <div class="card pop">
-    <span class="label">${again?"Try this one again":"Question"} · ${S.queue.length} left to light</span>
+    <span class="label">${S.again?"Try this one again":"Question"}${set.id==="MIX"?" · "+esc(MODULES[srcMi].title):""} · ${S.queue.length} left to light</span>
     <p class="q">${esc(q[0])}</p>
     <div class="opts">${opts}</div>
     ${!S.answered?(S.hintShown?`<div class="hint"><span class="label">Hint</span><p>${esc(q[2])}</p></div>`:`<div class="row"><button class="ghost" id="hint">Show a hint</button></div>`):""}
     ${fb}
   </div>`;
-  document.getElementById("back").onclick=home;
+  document.getElementById("back").onclick=()=>go(home);
   app.querySelectorAll("[data-o]").forEach(b=>b.onclick=()=>choose(+b.dataset.o));
-  const h=document.getElementById("hint");if(h)h.onclick=()=>{S.hintShown=true;S.hints++;S.usedHint=S.usedHint||[];S.usedHint.push(qi);render()};
-  const n=document.getElementById("next");if(n){n.onclick=next;n.focus()}
+  const h=document.getElementById("hint");if(h)h.onclick=()=>{S.hintShown=true;S.hints++;S.usedHint.push(qi);render()};
+  const rl=document.getElementById("relearn");if(rl)rl.onclick=()=>relearn(srcMi);
+  const n=document.getElementById("next");if(n){n.onclick=next;n.focus({preventScroll:true})}
 }
-
+/* open the lesson mid-practice and come back to the same place */
+function relearn(mi){
+  const keep=S;
+  const m=MODULES[mi];let step=0;
+  const show=()=>{const c=m.lesson[step];
+    app.innerHTML=`<div class="top-nav"><button class="primary" id="ret">← Back to my questions</button><span class="label">${esc(m.title)} · card ${step+1} of ${m.lesson.length}</span></div>
+    <div class="card pop"><h2>${esc(c.h)}</h2><div class="lesson-body">${lessonCard(c)}</div>
+    <div class="row">${step>0?`<button class="ghost" id="prev">← Back</button>`:""}<span class="spacer"></span>${step<m.lesson.length-1?`<button class="ghost" id="nx">Next card →</button>`:""}</div></div>`;
+    document.getElementById("ret").onclick=()=>{S=keep;go(render)};
+    const p=document.getElementById("prev");if(p)p.onclick=()=>{step--;go(show)};
+    const nx=document.getElementById("nx");if(nx)nx.onclick=()=>{step++;go(show)};};
+  S={screen:"relearn"};go(show);
+}
 function choose(i){
   if(S.answered)return;
   const qi=S.queue[0];S.pick=i;S.answered=true;
-  const ok=S.opts[i].ok;
-  if(ok){
-    if(!S.tried.includes(qi)&&!(S.usedHint||[]).includes(qi))S.firstTry.push(qi);
-    S.mastered.push(qi);
-  }else{S.mistakes++;if(!S.tried.includes(qi))S.tried.push(qi)}
+  if(S.opts[i].ok){if(!S.tried.includes(qi)&&!S.usedHint.includes(qi))S.firstTry.push(qi);S.mastered.push(qi)}
+  else{S.mistakes++;if(!S.tried.includes(qi))S.tried.push(qi)}
   render();
 }
-
 function next(){
   const qi=S.queue.shift();const ok=S.opts[S.pick].ok;S.opts=null;
-  if(!ok){const pos=Math.min(3,S.queue.length);S.queue.splice(pos,0,qi)}
-  if(!S.queue.length)return finish();
+  if(!ok){S.queue.splice(Math.min(3,S.queue.length),0,qi)}
+  if(!S.queue.length)return go(finish);
   ask();window.scrollTo(0,0);
 }
 
-function pendingNote(){
-  const p=(saved.pending||[]).length;
-  return SCORE_URL&&p?`<div class="card"><p class="send">${p} score${p>1?"s are":" is"} waiting to be sent. They will be sent automatically when you are online.</p></div>`:"";
-}
+/* ---------------- result + sending ---------------- */
+function pendingNote(){const p=(saved.pending||[]).length;
+  return SCORE_URL&&p?`<div class="card"><p class="send">${p} score${p>1?"s are":" is"} waiting to be sent. They will go to your teacher automatically when you are online.</p></div>`:""}
 let sending=false;
 async function flushPending(show){
   if(!SCORE_URL||sending||!(saved.pending||[]).length)return;
   sending=true;const el=()=>document.getElementById("send");
   while((saved.pending||[]).length){
-    const rec=saved.pending[0];
-    try{
-      await fetch(SCORE_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(rec)});
+    try{await fetch(SCORE_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(saved.pending[0])});
       saved.pending.shift();save();
-      if(show&&el()){el().textContent="Your score has been sent to your teacher.";el().className="send ok"}
-    }catch(e){
-      if(show&&el()){el().innerHTML='Could not send your score (no internet?). It is saved on this device. <button class="ghost" id="retry">Try again</button>';el().className="send bad";
+      if(show&&el()){el().textContent="Your score has been sent to your teacher.";el().className="send ok"}}
+    catch(e){if(show&&el()){el().innerHTML='Could not send your score (no internet?). It is saved on this device. <button class="ghost" id="retry">Try again</button>';el().className="send bad";
         const r=document.getElementById("retry");if(r)r.onclick=()=>{el().textContent="Sending…";el().className="send";flushPending(true)}}
-      break;
-    }
+      break}
   }
   sending=false;
 }
 function finish(){
-  const u=UNITS[S.ui];const n=u.q.length;const first=S.firstTry.length;const hints=S.hints,mist=S.mistakes;
-  const missed=S.tried.map(i=>u.q[i][0]).join(" | ");
-  const record={name:saved.name||"",roll:saved.roll||"",unit:u.name,first,total:n,hints,mistakes:mist,stars:0,minutes:Math.round((Date.now()-S.t0)/6000)/10,missed};
+  const set=S.set,n=set.q.length,first=S.firstTry.length,hints=S.hints,mist=S.mistakes;
   const stars=first>=n*0.85?3:first>=n*0.6?2:1;
-  record.stars=stars;
-  const prev=saved.best[u.id];
-  if(!prev||first>prev.first)saved.best[u.id]={first,date:new Date().toISOString().slice(0,10)};save();
-  const name=(saved.name||"(name not entered)")+(saved.roll?" · "+saved.roll:"");
-  const d=new Date();const ds=d.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})+", "+d.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
-  const msg=stars===3?"Excellent. You know this unit well.":stars===2?"Good work. Play once more to light more pins first time.":"Well done for finishing. Read the facts and play again; it gets easier each time.";
-  const nextU=S.ui<UNITS.length-1?`<button class="primary" id="nextu">Go to ${UNITS[S.ui+1].name}</button>`:"";
-  S={screen:"done",ui:S.ui};
-  app.innerHTML=`${boardHTML(u,new Set(u.q.map((_,i)=>i)),-1)}
+  const record={name:saved.name||"",roll:saved.roll||"",unit:set.id+" "+set.title,first,total:n,hints,mistakes:mist,stars,
+    minutes:Math.round((Date.now()-S.t0)/6000)/10,missed:S.tried.map(i=>set.q[i][0]).join(" | ")};
+  if(set.id!=="MIX"){const prev=saved.best[set.id];if(!prev||first>prev.first)saved.best[set.id]={first,date:new Date().toISOString().slice(0,10)}}
+  save();
+  const who=(saved.name||"(name not entered)")+(saved.roll?" · "+saved.roll:"");
+  const d=new Date(),ds=d.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})+", "+d.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
+  const msg=stars===3?"Excellent. You know this topic well.":stars===2?"Good work. Read the lesson once more and play again to light more pins first time.":"Well done for finishing. Read the lesson cards again and play once more; it gets easier every time.";
+  const sug=suggested(),mi=set.mi;
+  const nextBtn=set.id!=="MIX"&&sug>=0&&sug!==mi?`<button class="primary" id="nextm">Next: ${esc(MODULES[sug].title)}</button>`:"";
+  S={screen:"done",set};
+  app.innerHTML=`${boardHTML(set.title,n,new Set(set.q.map((_,i)=>i)),-1)}
   <div class="card pop">
-    <span class="label">All ${n} pins lit</span>
-    <h2>${esc(u.name)} complete</h2>
+    <span class="label">All ${n} pins lit</span><h2>${esc(set.title)} complete</h2>
     <div class="stars" aria-label="${stars} of 3 stars">${"★".repeat(stars)}<span class="off">${"★".repeat(3-stars)}</span></div>
     <p>${msg}</p>
-    <div class="stats">
-      <div class="stat"><span class="label">Right first time</span><b>${first}/${n}</b></div>
-      <div class="stat"><span class="label">Hints used</span><b>${hints}</b></div>
-      <div class="stat"><span class="label">Mistakes fixed</span><b>${mist}</b></div>
-    </div>
-    <div class="cert"><span class="label">Show this to your teacher</span><b>${esc(name)}</b><span>${esc(u.name)}: ${esc(u.title)} · ${first}/${n} first time · ${stars} star${stars>1?"s":""}</span><span class="muted">${ds}</span></div>
+    <div class="stats"><div class="stat"><span class="label">Right first time</span><b>${first}/${n}</b></div>
+      <div class="stat"><span class="label">Hints used</span><b>${hints}</b></div><div class="stat"><span class="label">Mistakes fixed</span><b>${mist}</b></div></div>
+    <div class="cert"><span class="label">Show this to your teacher</span><b>${esc(who)}</b><span>${esc(set.title)} · ${first}/${n} right first time · ${stars} star${stars>1?"s":""}</span><span class="muted">${ds}</span></div>
     <p class="send" id="send" ${SCORE_URL?"":"hidden"}>Sending your score to your teacher…</p>
-    <div class="row"><button class="ghost" id="home">All units</button><button class="ghost" id="again">Play again</button><span class="spacer"></span>${nextU}</div>
+    <div class="row"><button class="ghost" id="home">All topics</button>${mi>=0&&stars<3?`<button class="ghost" id="rel">Read the lesson again</button>`:""}<button class="ghost" id="again">Play again</button><span class="spacer"></span>${nextBtn}</div>
   </div>`;
-  document.getElementById("home").onclick=home;
-  document.getElementById("again").onclick=()=>start(S.ui);
-  const nu=document.getElementById("nextu");if(nu)nu.onclick=()=>learn(S.ui+1);
+  document.getElementById("home").onclick=()=>go(home);
+  document.getElementById("again").onclick=()=>go(()=>set.id==="MIX"?startMix():start(mi));
+  const r=document.getElementById("rel");if(r)r.onclick=()=>go(()=>lesson(mi,0));
+  const nm=document.getElementById("nextm");if(nm)nm.onclick=()=>go(()=>lesson(sug,0));
   if(SCORE_URL){saved.pending=(saved.pending||[]).concat([record]);save();flushPending(true)}
-  window.scrollTo(0,0);
 }
-
 document.addEventListener("keydown",e=>{
   if(S.screen!=="play"||e.target.tagName==="INPUT")return;
-  if(!S.answered&&["1","2","3"].includes(e.key))choose(+e.key-1);
+  if(!S.answered&&/^[1-9]$/.test(e.key)&&+e.key<=S.opts.length)choose(+e.key-1);
 });
 home();
 </script>
