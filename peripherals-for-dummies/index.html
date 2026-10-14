@@ -1,0 +1,1373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RP2040 Peripherals for Dummies</title>
+<meta name="description" content="Ten RP2040 peripherals explained in plain words, with everyday analogies, animations, live simulators, real-life uses, code and quick quizzes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
+<style>
+/* Layout: a bench instrument — chip map hero, module rail on the left, one working panel that switches between Learn / Simulate / Real world / Code / Quiz */
+:root{
+  --bg:#EBEFF2; --surface:#FFFFFF; --surface2:#F4F7F8; --ink:#13202A; --muted:#5A6874; --line:#D2DAE0;
+  --accent:#08876F; --accent-ink:#FFFFFF; --copper:#B97A12; --danger:#C2362B; --ok:#1F8A4C;
+  --sig1:#08876F; --sig2:#2F62D6; --sig3:#C2410C; --sig4:#7C4DDB; --grid:rgba(19,32,42,.06);
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Atkinson Hyperlegible", Verdana, "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B1116; --surface:#111A21; --surface2:#16212A; --ink:#E2EAF0; --muted:#8C9AA6; --line:#243240;
+  --accent:#2CD1B1; --accent-ink:#04201A; --copper:#E9B44C; --danger:#F06A5E; --ok:#4CD38A;
+  --sig1:#2CD1B1; --sig2:#6E9BFF; --sig3:#FF8A4C; --sig4:#B79BFF; --grid:rgba(226,234,240,.06); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1116; --surface:#111A21; --surface2:#16212A; --ink:#E2EAF0; --muted:#8C9AA6; --line:#243240;
+  --accent:#2CD1B1; --accent-ink:#04201A; --copper:#E9B44C; --danger:#F06A5E; --ok:#4CD38A;
+  --sig1:#2CD1B1; --sig2:#6E9BFF; --sig3:#FF8A4C; --sig4:#B79BFF; --grid:rgba(226,234,240,.06); color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 var(--f-body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1260px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.1}
+.mono{font-family:var(--f-mono)}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+button{font:inherit;color:inherit;cursor:pointer}
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top, 0px);z-index:20;background:color-mix(in srgb, var(--bg) 86%, transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:14px;padding-block:10px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:700;font-size:17px}
+.brand i{width:22px;height:22px;border-radius:5px;background:var(--ink);position:relative;display:block}
+.brand i::after{content:"";position:absolute;inset:6px;border-radius:2px;background:var(--accent)}
+.prog{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.bar{width:120px;height:6px;border-radius:9px;background:var(--line);overflow:hidden}
+.bar b{display:block;height:100%;width:0;background:var(--accent);border-radius:9px;transition:width .6s}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:28px;align-items:center;padding-block:34px 18px}
+.eyebrow{font:600 11.5px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.hero h1{font-size:clamp(34px,5.2vw,60px);font-weight:800;letter-spacing:-.02em;margin:10px 0 14px}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p{max-width:56ch;color:var(--muted);margin:0 0 18px}
+.hero .row{display:flex;gap:10px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);padding:9px 16px;border-radius:999px;font-weight:600;font-size:14px;transition:transform .15s, border-color .15s}
+.btn:hover{border-color:var(--accent);transform:translateY(-1px)}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chipmap{width:100%;max-width:470px;justify-self:center}
+.chipmap svg{width:100%;height:auto;display:block}
+.pad{cursor:pointer}
+.pad rect{fill:var(--surface);stroke:var(--line);stroke-width:1.2;transition:fill .2s, stroke .2s}
+.pad text{fill:var(--ink);font:600 12px var(--f-mono)}
+.pad:hover rect,.pad.done rect{stroke:var(--accent)}
+.pad.done rect{fill:color-mix(in srgb, var(--accent) 14%, var(--surface))}
+.trace{fill:none;stroke:var(--line);stroke-width:2}
+.die{fill:var(--ink)}
+.die-t{fill:var(--bg);font:800 22px var(--f-display)}
+.die-s{fill:color-mix(in srgb, var(--bg) 70%, var(--ink));font:500 10px var(--f-mono)}
+.flow-dot{fill:var(--copper)}
+
+/* shell */
+.shell{display:grid;grid-template-columns:250px minmax(0,1fr);gap:20px;padding-block:14px 30px}
+.rail{position:sticky;top:70px;align-self:start;display:flex;flex-direction:column;gap:4px}
+.rail h2{font-size:13px;font-family:var(--f-mono);font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:2px 8px 8px}
+.mbtn{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:8px;text-align:left;border:1px solid transparent;background:none;padding:8px 10px;border-radius:10px}
+.mbtn .n{font:600 11px var(--f-mono);color:var(--muted)}
+.mbtn .nm{font-weight:600}
+.mbtn .nm small{display:block;font-weight:400;font-size:11.5px;color:var(--muted);line-height:1.3}
+.mbtn:hover{background:var(--surface)}
+.mbtn.on{background:var(--surface);border-color:var(--line)}
+.mbtn.on .n{color:var(--accent)}
+.dots{display:flex;gap:3px}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.dots i.y{background:var(--accent)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.ph{padding:22px 24px 0;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:flex-end}
+.ph h2{font-size:clamp(26px,3.2vw,38px);font-weight:800;letter-spacing:-.015em}
+.ph .full{color:var(--muted);font-size:14px;flex-basis:100%}
+.ph .num{font:600 12px var(--f-mono);color:var(--accent);flex-basis:100%;letter-spacing:.1em}
+.tabs{display:flex;gap:4px;padding:16px 20px 0;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.tab{border:none;background:none;padding:10px 12px;font-weight:600;font-size:14px;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
+.tab.on{color:var(--ink);border-bottom-color:var(--accent)}
+.pb{padding:22px 24px 26px;min-width:0}
+
+/* learn */
+.learn{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:22px;align-items:start}
+.dia{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:8px}
+.dia svg{width:100%;height:auto;display:block}
+.el{transition:opacity .45s}
+.el:not(.shown){opacity:.13}
+.blk rect{fill:var(--surface);stroke:var(--line);stroke-width:1.3}
+.blk.focus rect{stroke:var(--accent);stroke-width:2}
+.blk .bl{fill:var(--ink);font:600 13px var(--f-body)}
+.blk .bs{fill:var(--muted);font:500 10px var(--f-mono)}
+.wire path{fill:none;stroke:var(--muted);stroke-width:2}
+.wire.focus path{stroke:var(--accent);stroke-width:2.5}
+.wire.x path{stroke-dasharray:5 5}
+.wire text{fill:var(--muted);font:600 10px var(--f-mono)}
+.step h3{font-size:22px;margin:4px 0 10px}
+.step p{margin:0 0 14px;max-width:60ch}
+.keyn{display:flex;gap:12px;align-items:baseline;border-left:3px solid var(--copper);padding:6px 12px;background:var(--surface2);border-radius:0 8px 8px 0;margin-bottom:16px}
+.keyn b{font:700 22px var(--f-mono);color:var(--copper);white-space:nowrap}
+.keyn span{font-size:13px;color:var(--muted)}
+.stepnav{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pips{display:flex;gap:6px;margin-right:auto}
+.pips button{width:26px;height:6px;border-radius:6px;border:none;background:var(--line);padding:0}
+.pips button.on{background:var(--accent)}
+
+/* sim */
+.ctls{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:flex-end;margin-bottom:16px}
+.ctl{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);min-width:130px}
+.ctl span{font-weight:600}
+.ctl b{color:var(--ink);font-family:var(--f-mono);font-weight:600}
+.ctl input[type=text],.ctl select,.ctl input:not([type]),.ctl input[type=number]{font:500 14px var(--f-mono);color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:100%;min-width:0}
+.ctl input[type=range]{accent-color:var(--accent);width:170px;max-width:100%}
+.chk{display:flex;gap:7px;align-items:center;font-size:13px;color:var(--ink);font-weight:500}
+.chk input{accent-color:var(--accent);width:16px;height:16px}
+.la{overflow-x:auto;background:var(--surface2);border:1px solid var(--line);border-radius:12px;margin-bottom:14px}
+.la canvas{display:block}
+.readouts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.ro{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;min-width:0}
+.ro small{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.ro b{font:600 15px var(--f-mono);font-variant-numeric:tabular-nums;word-break:break-word}
+.hint{font-size:13.5px;color:var(--muted);margin:0;max-width:75ch}
+.hint.warn{color:var(--danger)}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:14px;margin-bottom:14px}
+.cv{width:100%;display:block;background:var(--surface2);border:1px solid var(--line);border-radius:12px}
+.gadget{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px;justify-content:center;text-align:center;font-size:12.5px;color:var(--muted)}
+.led{width:58px;height:58px;border-radius:50%;background:var(--sig3);box-shadow:0 0 30px 6px var(--sig3);transition:opacity .1s}
+.log{font:12.5px/1.6 var(--f-mono);background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;height:150px;overflow:auto;color:var(--muted)}
+.log div b{color:var(--ink)}
+.big{font:600 clamp(20px,3.4vw,32px) var(--f-mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em;word-break:break-all}
+.alarms{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}
+.al{border:1px solid var(--line);background:var(--surface2);border-radius:10px;padding:8px;font:600 12px var(--f-mono);text-align:center}
+.al.armed{border-color:var(--copper);color:var(--copper)}
+.al.fired{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.meter{height:16px;border-radius:9px;background:var(--line);overflow:hidden;margin:6px 0 12px}
+.meter b{display:block;height:100%;background:var(--accent);width:100%}
+.meter.low b{background:var(--danger)}
+.wdt-stage{position:relative}
+.flash{position:absolute;inset:0;border-radius:12px;background:var(--danger);opacity:0;pointer-events:none;display:grid;place-items:center;color:#fff;font:800 34px var(--f-display);letter-spacing:.04em}
+.clock{font:600 clamp(32px,7vw,60px) var(--f-mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1}
+.steps-ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.steps-ol li{border:1px solid var(--line);border-radius:10px;padding:8px 11px;background:var(--surface2);font-size:13.5px}
+.steps-ol li b{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin-right:6px}
+.steps-ol li.on{border-color:var(--accent)}
+.steps-ol li.done{opacity:.6}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;margin-bottom:14px}
+table.desc{width:100%;border-collapse:collapse;font:12.5px var(--f-mono)}
+table.desc td{padding:5px 8px;border-bottom:1px solid var(--line)}
+table.desc td:first-child{color:var(--muted)}
+.cache{display:grid;grid-template-columns:repeat(16,1fr);gap:3px;margin:10px 0 12px}
+.cache i{aspect-ratio:1;border-radius:3px;background:var(--line);display:block;max-width:100%}
+.cache i.h{background:var(--accent)}
+.cache i.m{background:var(--copper)}
+h4{font:700 15px var(--f-display);margin:6px 0 8px}
+
+/* cases */
+.cases{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.case{border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--surface2)}
+.case .tg{font:600 10.5px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--copper)}
+.case h4{font-size:17px;margin:6px 0}
+.case p{margin:0;font-size:14px;color:var(--muted)}
+.pins{margin-top:18px;border:1px dashed var(--line);border-radius:12px;padding:12px 14px;font-size:14px}
+.pins b{font-family:var(--f-mono)}
+/* code */
+.code{position:relative;background:var(--ink);color:var(--bg);border-radius:12px;overflow:auto}
+.code pre{margin:0;padding:18px 18px;font:13px/1.65 var(--f-mono);white-space:pre}
+.code .lang{position:absolute;top:10px;right:12px;display:flex;gap:8px;align-items:center;font:600 11px var(--f-mono);opacity:.85}
+.code .cp{background:transparent;border:1px solid color-mix(in srgb, var(--bg) 40%, transparent);color:var(--bg);border-radius:6px;padding:3px 9px;font-size:11px}
+.cm{opacity:.55}
+/* quiz */
+.q{border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px}
+.q h4{font-family:var(--f-body);font-weight:600;font-size:15px;margin:0 0 10px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--surface2);border-radius:9px;padding:9px 12px;font-size:14px}
+.opt:hover{border-color:var(--accent)}
+.opt.right{border-color:var(--ok);background:color-mix(in srgb, var(--ok) 14%, var(--surface2))}
+.opt.wrong{border-color:var(--danger);background:color-mix(in srgb, var(--danger) 12%, var(--surface2))}
+.expl{font-size:13.5px;color:var(--muted);margin:10px 0 0}
+.qres{font-weight:600;margin-top:6px}
+
+/* lifelong */
+.life{padding-block:10px 60px}
+.life-head{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;justify-content:space-between;margin-bottom:22px}
+.life-head h2{font-size:clamp(28px,4vw,46px);font-weight:800;letter-spacing:-.02em;max-width:18ch}
+.life-head p{max-width:52ch;color:var(--muted);margin:8px 0 0}
+.play{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:26px}
+.ps{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+.ps .k{font:600 11px var(--f-mono);color:var(--accent)}
+.ps h4{margin:4px 0}
+.ps p{margin:0;font-size:13.5px;color:var(--muted)}
+.cap{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-bottom:26px}
+.cp-card{border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--surface)}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0}
+.chips span{font:600 11px var(--f-mono);border:1px solid var(--line);border-radius:999px;padding:2px 8px;color:var(--muted)}
+.cert{border:1px solid var(--line);border-radius:16px;padding:22px;background:var(--surface);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px}
+.cert.locked .badge{filter:grayscale(1);opacity:.45}
+.badge{border:2px solid var(--accent);border-radius:14px;padding:20px;text-align:center;background:var(--surface2)}
+.badge .t{font:800 22px var(--f-display)}
+.badge .nm{font:600 20px var(--f-mono);color:var(--accent);margin:8px 0}
+.rev{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.rev div{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:5px 0;font-size:14px}
+.rev b{font-family:var(--f-mono);font-weight:600}
+textarea{width:100%;min-height:80px;font:14px var(--f-body);color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px}
+footer{border-top:1px solid var(--line);padding-block:20px;color:var(--muted);font-size:13px}
+
+@media (max-width:920px){
+  .hero{grid-template-columns:1fr;padding-block:24px 8px}
+  .chipmap{max-width:380px}
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .rail{position:static;flex-direction:row;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+  .rail h2{display:none}
+  .mbtn{grid-template-columns:auto auto;flex:0 0 auto}
+  .mbtn .nm small,.mbtn .dots{display:none}
+  .learn,.two,.cert{grid-template-columns:minmax(0,1fr)}
+  .stage{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:520px){
+  .ph,.pb{padding-left:16px;padding-right:16px}
+  .tabs{padding-left:10px;padding-right:10px}
+  .alarms{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cache{grid-template-columns:repeat(8,1fr)}
+}
+/* plain-language layer */
+.hbtn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-weight:700;font-size:13px}
+.hbtn:hover{border-color:var(--accent)}
+.bigidea{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:16px;margin-bottom:20px}
+.one{font:700 clamp(18px,2.2vw,22px)/1.35 var(--f-display);margin:0}
+.one small{display:block;font:700 11px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.story{background:color-mix(in srgb, var(--copper) 10%, var(--surface));border:1px solid color-mix(in srgb, var(--copper) 35%, var(--line));border-radius:12px;padding:14px 16px}
+.story p{margin:0}
+.lbl{display:inline-flex;align-items:center;gap:6px;font:700 11px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.lbl::before{content:"";width:16px;height:16px;border-radius:50%;background:currentColor;opacity:.9;flex:none;
+  -webkit-mask:radial-gradient(circle,transparent 3px,#000 3.5px);mask:radial-gradient(circle,transparent 3px,#000 3.5px)}
+.lbl.pic{color:var(--copper)} .lbl.rem{color:var(--accent)} .lbl.warn{color:var(--danger)} .lbl.try{color:var(--sig2)}
+.jargon{margin-top:22px;border:1px solid var(--line);border-radius:12px;background:var(--surface2)}
+.jargon summary{cursor:pointer;padding:12px 16px;font-weight:700}
+.jargon dl{margin:0;padding:0 16px 14px;display:grid;grid-template-columns:minmax(120px,auto) minmax(0,1fr);gap:6px 16px}
+.jargon dt{font:700 13px var(--f-mono);color:var(--ink)}
+.jargon dd{margin:0;color:var(--muted);font-size:14.5px}
+.tries{border:1px solid color-mix(in srgb, var(--sig2) 35%, var(--line));background:color-mix(in srgb, var(--sig2) 7%, var(--surface));border-radius:12px;padding:12px 16px;margin-bottom:18px}
+.tries ul{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.tries label{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;cursor:pointer}
+.tries input{accent-color:var(--sig2);width:17px;height:17px;margin-top:3px;flex:none}
+.tries input:checked + span{text-decoration:line-through;color:var(--muted)}
+.mist{margin-top:18px;border:1px solid color-mix(in srgb, var(--danger) 35%, var(--line));background:color-mix(in srgb, var(--danger) 6%, var(--surface));border-radius:12px;padding:12px 16px}
+.mist ul{margin:4px 0 0;padding-left:20px;font-size:14.5px}
+.ph h2 span{font-weight:500;color:var(--muted);font-size:.55em;letter-spacing:0}
+/* guide */
+.guide{padding-block:8px 18px}
+.guide-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px 24px}
+.guide-box h2{font-size:clamp(24px,3vw,32px);font-weight:800;margin-bottom:6px}
+.guide-box > p{margin:0 0 16px;color:var(--muted);max-width:70ch}
+.gsteps{list-style:none;margin:0 0 16px;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;counter-reset:g}
+.gsteps li{border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:12px;padding:12px 14px;background:var(--surface2);font-size:14.5px}
+.gsteps b{display:block;font-size:15px;margin-bottom:2px}
+.gfacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:14px}
+.gfacts div{font-size:14.5px;border-left:3px solid var(--copper);padding:4px 0 4px 12px}
+.gfacts b{display:block}
+details.teach{border:1px dashed var(--line);border-radius:12px;padding:0 16px}
+details.teach summary{cursor:pointer;padding:12px 0;font-weight:700}
+details.teach ol{margin:0 0 14px;padding-left:20px;font-size:14.5px}
+details.teach li{margin-bottom:4px}
+.fine{font-size:12px;color:var(--muted);margin-top:6px}
+@media (max-width:920px){.bigidea{grid-template-columns:minmax(0,1fr)}}
+#guide,#lab,#life{scroll-margin-top:70px}
+@media (max-width:520px){.top .bar{display:none} .brand{font-size:15px;line-height:1.2} .jargon dl{grid-template-columns:minmax(0,1fr)} .jargon dd{margin-bottom:6px} .guide-box{padding:18px 16px}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="brand"><i></i>RP2040 Peripherals for Dummies</div>
+  <div class="prog"><button class="hbtn" id="helpBtn">How to use</button><span id="progTxt">0 / 10 done</span><div class="bar"><b id="progBar"></b></div></div>
+</div></header>
+
+<section class="wrap hero">
+  <div>
+    <div class="eyebrow">U21BM501 · Microcontroller and its Applications</div>
+    <h1>Your Pico has ten little helpers. <em>Meet them one at a time.</em></h1>
+    <p>No prior knowledge needed. Every helper (peripheral) is explained with an everyday story first, then a moving picture, then a simulator you can poke and break. Each one takes about 25 minutes.</p>
+    <div class="row">
+      <button class="btn pri" id="startBtn">Start with helper 1</button>
+      <button class="btn" id="guideBtn">How to use this guide</button>
+    </div>
+  </div>
+  <div class="chipmap" id="chipmap"></div>
+</section>
+
+<section class="wrap guide" id="guide">
+ <div class="guide-box">
+  <div class="eyebrow">Read this first · 2 minutes</div>
+  <h2>How to use this guide</h2>
+  <p>A <b>peripheral</b> is a helper circuit built into the RP2040 chip. Each one does a single job (keeping time, measuring a voltage, talking to a sensor) so your program does not have to. Learn them one by one, in this order:</p>
+  <ol class="gsteps">
+   <li><b>Pick a helper</b>Start with helper 1 (Timer) and work down the list of helpers. It goes from easiest to hardest. You can also tap any box on the chip picture.</li>
+   <li><b>1 · Understand</b>Read the one-line summary and the “Picture this” story. Then press <i>Next</i> through four short steps while the diagram lights up. Open the Jargon buster if a word is new.</li>
+   <li><b>2 · Play</b>Do the three “Try this” tasks in the simulator and tick them off. Break things on purpose: that is how you learn what failure looks like.</li>
+   <li><b>3 · Real life</b>See where the helper is used in medical devices, which Pico pins to wire, and the mistakes beginners usually make.</li>
+   <li><b>4 · Code</b>Copy the short program into Thonny or a Wokwi Pico project. Change one number, guess what will happen, then run it.</li>
+   <li><b>5 · Check yourself</b>Answer the three questions. Wrong answers just ask you to try again. When all three are right, the helper is done.</li>
+  </ol>
+  <div class="gfacts">
+   <div><b>Three dots = done</b>Each helper in the list has three dots: Understand, Play and Check yourself. All three green means that helper is complete.</div>
+   <div><b>Your progress is saved</b>…in this browser on this device. Use the same phone or PC to continue. Private or incognito windows forget everything.</div>
+   <div><b>Pace</b>About 25 minutes per helper, 4 hours in total. One or two helpers a day works well.</div>
+   <div><b>Finished all ten?</b>Scroll to the end for your badge, a review calendar and project ideas that combine several helpers.</div>
+  </div>
+  <details class="teach"><summary>Teacher’s notes</summary>
+   <ol>
+    <li>Share this link with the class: students need nothing but a browser. It works on phones.</li>
+    <li>In a lab hour, do one helper together: read the story aloud, run the simulator on the projector, then let students finish Play and Check yourself alone.</li>
+    <li>For homework, set two helpers and ask for a screenshot of the three green dots, or of the badge at the end.</li>
+    <li>Pair each helper with a Wokwi build using the snippet in the Code tab (for example, PWM with a servo on GP15).</li>
+    <li>This page does not send scores anywhere. For graded revision with a score sheet, use the <a href="../practice-lab/">RP2040 Practice Lab</a>.</li>
+   </ol>
+  </details>
+ </div>
+</section>
+
+<section class="wrap shell" id="lab">
+  <nav class="rail" id="rail" aria-label="Modules"><h2>Learning path</h2></nav>
+  <article class="panel" id="panel">
+    <div class="ph" id="ph"></div>
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="pb" id="pb"></div>
+  </article>
+</section>
+
+<section class="wrap life" id="life"></section>
+<footer><div class="wrap">Numbers follow the RP2040 datasheet (125 MHz system clock, 12 MHz crystal, 48 MHz USB and ADC clock). Prepared for U21BM501, Department of Biomedical Engineering, KPRIET. Not affiliated with the <i>For Dummies</i>® book series.</div></footer>
+
+<script>
+(()=>{
+const hasG = typeof gsap !== 'undefined', hasA = typeof anime !== 'undefined';
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = (s,el=document)=>el.querySelector(s);
+const $$ = (s,el=document)=>[...el.querySelectorAll(s)];
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const hex = (n,w=2)=>'0x'+(n>>>0).toString(16).toUpperCase().padStart(w,'0');
+const store = {get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const fmtT = s => s>=1 ? s.toFixed(3)+' s' : s>=1e-3 ? (s*1e3).toFixed(3)+' ms' : s>=1e-6 ? (s*1e6).toFixed(2)+' µs' : (s*1e9).toFixed(0)+' ns';
+const parseHex = (v,d)=>{const n=parseInt(String(v).replace(/^0x/i,''),16);return isNaN(n)?d:n};
+
+/* ---------- global animation loop ---------- */
+const flows = []; let simLoop = null; let last = performance.now();
+function frame(now){
+  const dt = Math.min(100, now-last); last = now;
+  if(!RM) for(const f of flows){ if(!f.el.isConnected) continue; const p=((now/f.speed + f.off)%1)*f.len; const pt=f.path.getPointAtLength(p); f.el.setAttribute('cx',pt.x); f.el.setAttribute('cy',pt.y); }
+  if(simLoop) simLoop(dt, now);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+function addFlow(svg, path, n=2, speed=1500){
+  const len = path.getTotalLength();
+  for(let i=0;i<n;i++){ const c=document.createElementNS('http://www.w3.org/2000/svg','circle'); c.setAttribute('r',4); c.setAttribute('class','flow-dot'); const s=path.getPointAtLength(0); c.setAttribute('cx',s.x); c.setAttribute('cy',s.y); svg.appendChild(c); flows.push({el:c,path,len,off:i/n,speed}); }
+}
+function clearFlows(svg){ for(let i=flows.length-1;i>=0;i--) if(svg.contains(flows[i].el)){flows[i].el.remove(); flows.splice(i,1);} }
+
+/* ---------- logic analyzer renderer ---------- */
+function LA(holder){
+  const cv=document.createElement('canvas'); holder.appendChild(cv);
+  let model=null, p=1, tw=null;
+  function draw(){
+    if(!model) return;
+    const dpr=window.devicePixelRatio||1, rowH=40, padL=70, padR=14, top=10;
+    const W=Math.max(holder.clientWidth-2, padL+padR+model.units*(model.px||14));
+    const H=top+model.rows.length*rowH+8;
+    cv.width=W*dpr; cv.height=H*dpr; cv.style.width=W+'px'; cv.style.height=H+'px';
+    const c=cv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,W,H);
+    const px=(W-padL-padR)/model.units, X=t=>padL+t*px, tEnd=p*model.units;
+    c.strokeStyle=css('--grid'); c.lineWidth=1;
+    if(px>=6) for(let i=0;i<=model.units;i++){c.beginPath();c.moveTo(X(i)+.5,top);c.lineTo(X(i)+.5,H-6);c.stroke();}
+    model.rows.forEach((r,ri)=>{
+      const y0=top+ri*rowH, hi=y0+7, lo=y0+rowH-11, mid=(hi+lo)/2;
+      c.fillStyle=css('--muted'); c.font='600 11px '+css('--f-mono'); c.textBaseline='middle'; c.fillText(r.name,8,mid);
+      const col=css(r.color||'--sig1');
+      if(r.type==='d'){
+        const yv=v=>v===1?hi:v===0?lo:mid;
+        let prevY=null;
+        for(let i=0;i<r.vals.length && i<tEnd;i++){
+          const v=r.vals[i], x0=X(i), x1=X(Math.min(i+1,tEnd)), y=yv(v);
+          if(v===1){c.fillStyle=col; c.globalAlpha=.09; c.fillRect(x0,hi,x1-x0,lo-hi); c.globalAlpha=1;}
+          c.strokeStyle=col; c.lineWidth=2; c.globalAlpha=v===null?.45:1;
+          c.beginPath(); if(prevY!==null && prevY!==y){c.moveTo(x0,prevY); c.lineTo(x0,y);} else c.moveTo(x0,y); c.lineTo(x1,y); c.stroke(); c.globalAlpha=1;
+          prevY=y;
+        }
+      } else if(r.type==='bus'){
+        for(const it of r.items){
+          if(it.t0>=tEnd) continue;
+          const x0=X(it.t0)+1, x1=X(Math.min(it.t1,tEnd))-1, w=x1-x0; if(w<2) continue;
+          const k=Math.min(5,w/3), ic=it.color?css(it.color):col;
+          c.beginPath(); c.moveTo(x0,mid); c.lineTo(x0+k,hi+2); c.lineTo(x1-k,hi+2); c.lineTo(x1,mid); c.lineTo(x1-k,lo-2); c.lineTo(x0+k,lo-2); c.closePath();
+          c.fillStyle=ic; c.globalAlpha=.14; c.fill(); c.globalAlpha=1; c.strokeStyle=ic; c.lineWidth=1.3; c.stroke();
+          if(it.t1<=tEnd){ c.font='600 10.5px '+css('--f-mono'); const tw2=c.measureText(it.text).width; if(tw2<w-6){c.fillStyle=css('--ink'); c.textAlign='center'; c.fillText(it.text,(x0+x1)/2,mid+.5); c.textAlign='left';} }
+        }
+      }
+    });
+    (model.marks||[]).forEach(m=>{ if(m.t>tEnd) return; const r=model.rows[m.row]; const y0=top+m.row*rowH, hi=y0+7, lo=y0+rowH-11; const v=r.vals[Math.floor(m.t)]; const y=v===1?hi:v===0?lo:(hi+lo)/2; c.fillStyle=css(m.color||'--copper'); c.beginPath(); c.arc(X(m.t),y,3.6,0,7); c.fill(); });
+    if(p<1){c.strokeStyle=css('--accent'); c.lineWidth=1.5; c.beginPath(); c.moveTo(X(tEnd),top); c.lineTo(X(tEnd),H-6); c.stroke();}
+  }
+  return {
+    play(m){ model=m; if(tw) tw.kill&&tw.kill(); if(!hasG||RM){p=1;draw();return;} const o={p:0}; tw=gsap.to(o,{p:1,duration:Math.min(2.6,.6+m.units*.012),ease:'power1.inOut',onUpdate:()=>{p=o.p;draw();}}); },
+    redraw:draw
+  };
+}
+const laSet=new Set();
+function mkLA(holder){const l=LA(holder); laSet.add(l); return l;}
+addEventListener('resize',()=>laSet.forEach(l=>l.redraw()));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>laSet.forEach(l=>l.redraw()));
+
+function hiDPI(cv){ const dpr=window.devicePixelRatio||1, w=cv.clientWidth, h=cv.clientHeight; if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr);} const c=cv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0); return [c,w,h]; }
+function ro(arr){ return arr.map(([k,v])=>`<div class="ro"><small>${k}</small><b>${v}</b></div>`).join(''); }
+
+/* ================= MODULE DATA ================= */
+const M = [];
+
+/* ---------- 1 TIMER ---------- */
+M.push({id:'timer', name:'Timer', full:'64-bit microsecond timer with four alarms', tag:'The heartbeat everything else leans on',
+pins:'Internal block — no pins. Read with <b>time_us_64()</b> (C) or <b>time.ticks_us()</b> (MicroPython).',
+dia:{blocks:[['tick',20,40,130,50,'clk_ref → tick','1 MHz · 1 µs'],['ctr',200,40,180,50,'64-bit counter','TIMEHR : TIMELR'],['read',430,40,150,50,'Read it','low word first'],['wrap',20,150,150,50,'Wraps after','584 942 years'],['alarms',200,150,180,50,'4 alarms','32-bit compare'],['irq',430,150,150,50,'Interrupt','TIMER_IRQ_0…3'],['cpu',430,240,150,46,'Your handler','sample, blink, time-out']],
+ wires:[['w1','M150,65 L200,65'],['w5','M380,65 L430,65'],['w2','M290,90 L290,150'],['w3','M380,175 L430,175'],['w4','M505,200 L505,240']]},
+learn:[
+ {t:'A ruler made of time',b:'The watchdog block divides the 12 MHz crystal down to a clean 1 MHz tick. Every tick adds one to a counter. That is all a timer is: a counter driven by a known clock, so counts become microseconds.',show:['tick','ctr','w1'],flow:['w1'],key:['1 µs','one count of the RP2040 timer']},
+ {t:'Sixty-four bits never run out',b:'The counter is 64 bits wide, split into two 32-bit registers. It starts at zero on reset and will not wrap for over half a million years, so you can subtract any two timestamps safely. Read TIMELR first: that latches TIMEHR so the pair belongs to the same instant.',show:['read','wrap','w5'],flow:['w5'],key:['584 942 yr','until the 64-bit counter wraps']},
+ {t:'Alarms let hardware wait for you',b:'Four alarm registers compare against the low 32 bits. When the counter reaches the value you wrote, the timer raises an interrupt. The CPU is free to do other work or sleep meanwhile.',show:['alarms','irq','w2','w3'],flow:['w2','w3'],key:['71.6 min','window of a 32-bit alarm']},
+ {t:'Precise periodic work',b:'Re-arm the alarm inside its own handler, adding a fixed period to the previous target rather than to "now". The error never accumulates, which is why ECG and EEG sampling uses a hardware timer, not sleep().',show:['cpu','w4'],flow:['w3','w4'],key:['2 000 µs','period for 500 Hz ECG sampling']}],
+sim(root,api){
+ root.innerHTML=`<div class="ro" style="margin-bottom:12px"><small>time_us_64()</small><div class="big" id="tm-big">0</div><div class="mono" style="font-size:13px;color:var(--muted)">TIMEHR <b id="tm-hi" style="color:var(--ink)">0x00000000</b> · TIMELR <b id="tm-lo" style="color:var(--ink)">0x00000000</b></div></div>
+ <div class="ctls"><label class="ctl"><span>Alarm delay <b id="tm-dv">1500 ms</b></span><input type="range" id="tm-delay" min="200" max="3800" step="100" value="1500"></label>
+ <label class="chk"><input type="checkbox" id="tm-tick" checked> Show 500 Hz sampling ticks</label>
+ <button class="btn" id="tm-wrap">Jump to 3 s before TIMELR wraps</button></div>
+ <div class="alarms">${[0,1,2,3].map(i=>`<button class="al" data-a="${i}">ALARM${i}<br><span>idle</span></button>`).join('')}</div>
+ <canvas class="cv" id="tm-cv" style="height:150px"></canvas>
+ <div class="readouts" style="margin-top:12px" id="tm-ro"></div>
+ <div class="log" id="tm-log"><div>Tap an alarm to arm it. Diamonds show where each alarm will fire.</div></div>`;
+ const base=performance.now(); let off=0; const al=[0,1,2,3].map(()=>({armed:false,at:0}));
+ const now=()=> (performance.now()-base)*1000+off;
+ const logEl=$('#tm-log',root), cv=$('#tm-cv',root);
+ const log=s=>{const d=document.createElement('div'); d.innerHTML=s; logEl.prepend(d);};
+ $('#tm-delay',root).oninput=e=>{$('#tm-dv',root).textContent=e.target.value+' ms'; api.touched();};
+ $('#tm-wrap',root).onclick=()=>{const t=now(); off+= (4294967296 - (t%4294967296)) - 3e6; api.touched(); log('Jumped ahead. Watch TIMEHR tick up when TIMELR wraps to zero.');};
+ $$('.al',root).forEach(b=>b.onclick=()=>{const i=+b.dataset.a, d=+$('#tm-delay',root).value; al[i]={armed:true,at:now()+d*1000}; b.className='al armed'; b.querySelector('span').textContent='armed'; api.touched(); log(`ALARM${i} armed: ALARM${i} = <b>${hex(Math.floor(al[i].at)%4294967296,8)}</b>`);});
+ let lastHi=0;
+ api.loop(()=>{
+  const t=now(), hi=Math.floor(t/4294967296), lo=Math.floor(t%4294967296);
+  $('#tm-big',root).textContent=Math.floor(t).toLocaleString('en-US')+' µs';
+  $('#tm-hi',root).textContent=hex(hi,8); $('#tm-lo',root).textContent=hex(lo,8);
+  if(hi!==lastHi){lastHi=hi; if(hasA) anime({targets:$('#tm-hi',root),scale:[1.4,1],duration:700,easing:'easeOutElastic(1,.5)'}); log('TIMELR wrapped → TIMEHR is now <b>'+hex(hi,8)+'</b>');}
+  al.forEach((a,i)=>{ if(a.armed && t>=a.at){ a.armed=false; const b=$$('.al',root)[i]; b.className='al fired'; b.querySelector('span').textContent='fired'; log(`<b>ALARM${i} fired</b> at ${Math.floor(t).toLocaleString('en-US')} µs`); if(hasA) anime({targets:b,scale:[1.12,1],duration:600,easing:'easeOutBack'}); setTimeout(()=>{b.className='al'; b.querySelector('span').textContent='idle';},1600);} });
+  const [c,w,h]=hiDPI(cv); c.clearRect(0,0,w,h);
+  const span=6e6, nx=w*0.33, X=tt=>nx+(tt-t)/span*w;
+  c.strokeStyle=css('--grid'); c.fillStyle=css('--muted'); c.font='10px '+css('--f-mono');
+  for(let s=Math.ceil((t-2e6)/5e5)*5e5; s<t+4e6; s+=5e5){const x=X(s); c.beginPath(); c.moveTo(x,20); c.lineTo(x,h-20); c.stroke(); c.fillText(((s-t)/1e6).toFixed(1)+'s',x+2,h-8);}
+  if($('#tm-tick',root).checked){ c.strokeStyle=css('--sig2'); c.globalAlpha=.5; for(let s=Math.ceil((t-2e6)/1e4)*1e4; s<t; s+=1e4){const x=X(s); c.beginPath(); c.moveTo(x,h/2-14); c.lineTo(x,h/2+14); c.stroke();} c.globalAlpha=1; c.fillStyle=css('--sig2'); c.fillText('sampling ticks (1 in 5 drawn)',8,14); }
+  al.forEach((a,i)=>{ if(!a.armed) return; const x=X(a.at), y=36+i*22; c.fillStyle=css('--copper'); c.beginPath(); c.moveTo(x,y-7); c.lineTo(x+7,y); c.lineTo(x,y+7); c.lineTo(x-7,y); c.closePath(); c.fill(); c.fillText('A'+i,x+10,y+4); });
+  c.strokeStyle=css('--accent'); c.lineWidth=2; c.beginPath(); c.moveTo(nx,10); c.lineTo(nx,h-20); c.stroke(); c.lineWidth=1; c.fillStyle=css('--accent'); c.fillText('now',nx+4,22);
+  $('#tm-ro',root).innerHTML=ro([['TIMELR wraps in',((4294967296-lo)/1e6).toFixed(1)+' s'],['Resolution','1 µs'],['500 Hz period','2 000 counts'],['Alarms armed',al.filter(a=>a.armed).length+' / 4']]);
+ });
+},
+cases:[['Fixed-rate ECG sampling','Biomedical','An alarm every 2 000 µs gives exactly 500 Hz. Heart-rate variability is computed from R-R intervals, so jitter in sampling becomes fake physiology.'],['Pulse transit time','Research','Timestamp the ECG R-peak and the PPG foot with time_us_64(). The difference, around 200 ms, tracks blood pressure trends without a cuff.'],['Non-blocking timeouts','Firmware','Store a deadline, keep working, and check the timer. A sensor that never answers can no longer freeze the whole device.']],
+code:{lang:'MicroPython',src:`from machine import Timer, ADC
+import time
+
+ecg = ADC(26)
+buf = []
+
+def sample(t):                  # runs every 2 ms
+    buf.append(ecg.read_u16() >> 4)   # 12-bit value
+
+Timer(mode=Timer.PERIODIC, freq=500, callback=sample)
+
+t0 = time.ticks_us()
+time.sleep(1)
+print(len(buf), "samples in", time.ticks_diff(time.ticks_us(), t0), "us")`},
+quiz:[['The RP2040 system timer counts in steps of',['1 ns','8 ns','1 µs','1 ms'],2,'A 1 MHz tick from clk_ref makes each count exactly one microsecond.'],['How many hardware alarms does the timer have?',['1','2','4','8'],2,'ALARM0 to ALARM3, each with its own interrupt line.'],['Why read TIMELR before TIMEHR?',['Reading the low word latches the high word, so both halves match','It is faster','TIMEHR is write-only','The order does not matter'],0,'Without the latch the low word could wrap between your two reads and give a value off by 71 minutes.']]
+});
+
+/* ---------- 2 PWM ---------- */
+M.push({id:'pwm', name:'PWM', full:'Pulse-width modulation: 8 slices × 2 channels', tag:'Digital pins that act analog',
+pins:'Any GPIO can be PWM. Slice = (GPIO ÷ 2) mod 8, channel A on even pins, B on odd. Example: <b>GP15</b> → slice 7 B.',
+dia:{blocks:[['clk',20,40,120,50,'clk_sys','125 MHz'],['div',170,40,120,50,'Divider','8.4 fractional'],['ctr',320,40,120,50,'Counter','0 → TOP → wrap'],['cc',170,150,120,50,'CC register','your duty level'],['cmp',320,150,120,50,'Compare','counter < CC ?'],['out',470,150,110,50,'GPIO','PWM out'],['load',470,240,110,46,'Load','LED · servo · motor'],['slices',20,240,250,46,'8 slices × 2 channels','16 outputs on any GPIO']],
+ wires:[['w1','M140,65 L170,65'],['w2','M290,65 L320,65'],['w3','M380,90 L380,150'],['w6','M290,175 L320,175'],['w4','M440,175 L470,175'],['w5','M525,200 L525,240']]},
+learn:[
+ {t:'Start with a counter',b:'Each PWM slice has a 16-bit counter fed from clk_sys through a fractional divider. It counts up to a value called TOP, then wraps to zero. One trip from 0 to TOP is one PWM period.',show:['clk','div','ctr','w1','w2'],flow:['w1','w2'],key:['f = 125 MHz ÷ ((TOP+1)·DIV)','PWM frequency']},
+ {t:'Compare to make a pulse',b:'You write a level into the CC register. While the counter is below CC the pin is high; once it passes CC the pin goes low. Bigger CC, wider pulse. The duty cycle is CC ÷ (TOP+1).',show:['cc','cmp','w3','w6'],flow:['w3','w6'],key:['duty = CC ÷ (TOP+1)','share of each period spent high']},
+ {t:'Loads average the pulses',b:'An LED, a motor or a heater cannot follow kHz switching, so they respond to the average. 30% duty on 3.3 V behaves like about 1 V. Servos instead read the pulse width itself: 1 ms to 2 ms inside a 20 ms frame.',show:['out','load','w4','w5'],flow:['w4','w5'],key:['1.0 – 2.0 ms','servo pulse in a 50 Hz frame']},
+ {t:'Sixteen channels, shared clocks',b:'There are 8 slices with two channels each. Both channels of a slice share TOP and the divider, so they share frequency but can have different duty. Phase-correct mode counts up then down, halving the frequency and centring the pulses, which motor drivers prefer.',show:['slices'],flow:['w1','w2','w4'],key:['TOP ≤ 65 535','16-bit counter limit']}],
+sim(root,api){
+ root.innerHTML=`<div class="ctls">
+  <label class="ctl"><span>Frequency <b id="pw-fv"></b></span><input type="range" id="pw-f" min="0" max="1000" value="500"></label>
+  <label class="ctl"><span>Duty <b id="pw-dv"></b></span><input type="range" id="pw-d" min="0" max="100" value="30"></label>
+  <label class="chk"><input type="checkbox" id="pw-pc"> Phase-correct</label>
+  <button class="btn" id="pw-servo">Servo preset (50 Hz)</button></div>
+ <div class="stage"><canvas class="cv" id="pw-cv" style="height:230px"></canvas>
+  <div class="gadget" id="pw-g"><div class="led" id="pw-led"></div><div>LED brightness</div>
+  <svg viewBox="0 0 120 70" width="140" aria-label="Servo"><path d="M10,62 A50,50 0 0 1 110,62" fill="none" stroke="var(--line)" stroke-width="6"/><line id="pw-arm" x1="60" y1="62" x2="60" y2="18" stroke="var(--accent)" stroke-width="5" stroke-linecap="round"/><circle cx="60" cy="62" r="6" fill="var(--ink)"/></svg><div id="pw-sv">Servo</div></div></div>
+ <div class="readouts" id="pw-ro"></div><p class="hint" id="pw-h"></p>`;
+ const F=()=>10*Math.pow(10,$('#pw-f',root).value/250);
+ let st={};
+ function calc(){
+  const clk=125e6, pc=$('#pw-pc',root).checked, k=pc?2:1, f=F(), duty=$('#pw-d',root).value/100;
+  let div=Math.max(1, Math.ceil(clk/(k*f*65536)*16)/16); div=Math.min(div,255+15/16);
+  let top=Math.round(clk/(k*f*div))-1; top=Math.max(1,Math.min(65535,top));
+  const fa=clk/(k*(top+1)*div), cc=Math.round(duty*(top+1)), pulse=duty/fa;
+  st={f,fa,div,top,cc,duty,pc,pulse};
+  $('#pw-fv',root).textContent=f>=1000?(f/1000).toFixed(2)+' kHz':f.toFixed(1)+' Hz';
+  $('#pw-dv',root).textContent=Math.round(duty*100)+'%';
+  $('#pw-ro',root).innerHTML=ro([['DIV',div.toFixed(4)],['TOP',top],['CC level',cc],['Actual f',fa>=1000?(fa/1000).toFixed(3)+' kHz':fa.toFixed(2)+' Hz'],['Resolution',Math.log2(top+1).toFixed(1)+' bits'],['Pulse width',fmtT(pulse)],['Average V',(duty*3.3).toFixed(2)+' V']]);
+  $('#pw-led',root).style.opacity=(0.08+duty*0.92).toFixed(2);
+  const servoOK=fa>40&&fa<60;
+  const ang=Math.max(0,Math.min(180,(pulse*1000-1)*180));
+  const a=(180-ang)*Math.PI/180; const arm=$('#pw-arm',root); arm.setAttribute('x2',60+44*Math.cos(a)); arm.setAttribute('y2',62-44*Math.sin(a));
+  $('#pw-sv',root).textContent=servoOK?`Servo at ${ang.toFixed(0)}°`:'Servo needs ~50 Hz';
+  $('#pw-h',root).textContent=f>20000?'Above 20 kHz: silent for motors, but resolution drops as TOP shrinks.':servoOK?'1 ms pulse = 0°, 1.5 ms = 90°, 2 ms = 180°. Try the duty slider between 5% and 10%.':'Higher frequency means a smaller TOP and fewer duty steps. That is the core PWM trade-off.';
+ }
+ ['#pw-f','#pw-d','#pw-pc'].forEach(s=>$(s,root).addEventListener('input',()=>{calc();api.touched();}));
+ $('#pw-servo',root).onclick=()=>{$('#pw-f',root).value=Math.round(250*Math.log10(5)); $('#pw-d',root).value=7; $('#pw-pc',root).checked=false; calc(); api.touched();};
+ calc(); const cv=$('#pw-cv',root); let ph=0;
+ api.loop(dt=>{
+  ph=(ph+dt/2600)%1; const [c,w,h]=hiDPI(cv); c.clearRect(0,0,w,h);
+  const L=58,R=w-14, per=(R-L)/3, top1=22, bot1=118, top2=150, bot2=205;
+  c.font='11px '+css('--f-mono'); c.fillStyle=css('--muted'); c.fillText('counter',6,70); c.fillText('GPIO',6,180); c.fillText('TOP',L-30,top1+4);
+  c.strokeStyle=css('--grid'); c.beginPath(); c.moveTo(L,top1); c.lineTo(R,top1); c.moveTo(L,bot1); c.lineTo(R,bot1); c.stroke();
+  const ccY=bot1-(bot1-top1)*st.duty;
+  c.setLineDash([5,4]); c.strokeStyle=css('--copper'); c.beginPath(); c.moveTo(L,ccY); c.lineTo(R,ccY); c.stroke(); c.setLineDash([]); c.fillStyle=css('--copper'); c.fillText('CC',L-30,ccY+4);
+  c.strokeStyle=css('--sig2'); c.lineWidth=2; c.beginPath();
+  for(let x=L;x<=R;x++){const u=((x-L)/per)%1; const v=st.pc?(u<.5?u*2:2-u*2):u; const y=bot1-(bot1-top1)*v; x===L?c.moveTo(x,y):c.lineTo(x,y);} c.stroke();
+  c.strokeStyle=css('--sig1'); c.beginPath(); let py=null;
+  for(let x=L;x<=R;x++){const u=((x-L)/per)%1; const v=st.pc?(u<.5?u*2:2-u*2):u; const y=v<st.duty?top2:bot2; if(py===null)c.moveTo(x,y); else if(y!==py){c.lineTo(x,py);c.lineTo(x,y);} else c.lineTo(x,y); py=y;} c.stroke(); c.lineWidth=1;
+  const cx=L+ph*(R-L); c.strokeStyle=css('--accent'); c.beginPath(); c.moveTo(cx,12); c.lineTo(cx,h-10); c.stroke();
+  c.fillStyle=css('--muted'); c.fillText('3 periods · slowed down for viewing',L,h-6);
+ });
+},
+cases:[['Servo pinch valve','Medical devices','A hobby servo on GP15 squeezes IV tubing to start or stop flow. 50 Hz frame, pulse width sets the angle.'],['Infusion pump motor','Biomedical','PWM into an H-bridge sets syringe-plunger speed. 20 kHz keeps the motor quiet near patients.'],['Alarm tones','Safety','Change PWM frequency for pitch and toggle it for rhythm to build distinct high, medium and low priority alarm sounds.']],
+code:{lang:'MicroPython',src:`from machine import PWM, Pin
+
+servo = PWM(Pin(15))
+servo.freq(50)                    # 20 ms frame
+
+def angle(deg):                   # 0..180
+    us = 1000 + deg / 180 * 1000  # 1.0 .. 2.0 ms
+    servo.duty_ns(int(us * 1000))
+
+angle(90)
+
+led = PWM(Pin(25)); led.freq(1000)
+led.duty_u16(int(0.30 * 65535))   # 30 % brightness`},
+quiz:[['A 50 Hz servo signal has a period of',['2 ms','20 ms','50 ms','200 ms'],1,'Period = 1 ÷ 50 Hz = 20 ms. The pulse inside it is 1 to 2 ms.'],['With TOP = 999, how many duty steps are available?',['100','999','1 000','65 535'],2,'CC can be 0 to 1 000, giving 1 000 distinct steps of 0.1% each.'],['Two GPIOs on the same slice always share',['Duty cycle','Frequency','Pin number','Nothing'],1,'Channels A and B share TOP and DIV, so frequency is common; CC is separate.']]
+});
+
+/* ---------- 3 ADC ---------- */
+M.push({id:'adc', name:'ADC', full:'12-bit SAR analog-to-digital converter, 500 ksps', tag:'Where the body meets the bits',
+pins:'<b>GP26–GP28</b> = ADC0–2. On a Pico, ADC3 (GP29) reads VSYS ÷ 3. ADC4 is the internal temperature sensor.',
+dia:{blocks:[['sig',20,40,140,50,'Analog in','GP26–29 · temp'],['mux',200,40,120,50,'5 : 1 mux','AINSEL'],['sh',360,40,110,50,'Sample & hold','freezes V'],['ref',20,140,140,60,'ADC_VREF','3.3 V full scale'],['fifo',200,140,120,60,'FIFO / DMA','4 deep'],['sar',360,140,110,60,'12-bit SAR','binary search'],['clk',500,140,90,60,'clk_adc','48 MHz'],['cpu',200,240,120,46,'Result','0 … 4095']],
+ wires:[['w1','M160,65 L200,65'],['w2','M320,65 L360,65'],['w3','M415,90 L415,140'],['w4','M500,170 L470,170'],['w5','M360,170 L320,170'],['w6','M260,200 L260,240']]},
+learn:[
+ {t:'Choose one of five inputs',b:'The real world is a voltage that changes smoothly: an ECG electrode, a thermistor divider, a potentiometer. A multiplexer picks which of the five inputs the single converter looks at.',show:['sig','mux','w1'],flow:['w1'],key:['5 inputs','4 GPIO + temperature sensor']},
+ {t:'Freeze it, then search',b:'A sample-and-hold capacitor captures the voltage so it stays still. The SAR then guesses one bit at a time, from the most significant down: is it above half? above three-quarters? Twelve guesses give a 12-bit number.',show:['sh','sar','ref','w2','w3'],flow:['w2','w3'],key:['806 µV','one LSB: 3.3 V ÷ 4096']},
+ {t:'The clock sets the speed',b:'clk_adc runs at 48 MHz and one conversion takes 96 of its cycles. That gives up to 500 000 samples a second, far more than any vital sign needs, so you trade the surplus for averaging and lower noise.',show:['clk','w4'],flow:['w4'],key:['48 MHz ÷ 96','= 500 ksps maximum']},
+ {t:'Sample fast enough, then trust it',b:'Results land in a 4-deep FIFO that DMA can drain into memory. The Nyquist rule says sample at more than twice the highest frequency present, or faster signals fold down and pretend to be slow ones (aliasing).',show:['fifo','cpu','w5','w6'],flow:['w5','w6'],key:['fs > 2·fmax','Nyquist criterion']}],
+sim(root,api){
+ root.innerHTML=`<div class="ctls">
+  <label class="ctl"><span>Signal</span><select id="ad-s"><option value="ecg">ECG (AD8232 out)</option><option value="sine">Sine wave</option><option value="pot">Potentiometer</option><option value="temp">Temperature sensor (ADC4)</option></select></label>
+  <label class="ctl"><span>Sample rate <b id="ad-fv"></b></span><input type="range" id="ad-fs" min="20" max="1000" step="10" value="250"></label>
+  <label class="ctl"><span>Resolution</span><select id="ad-b"><option>12</option><option>8</option><option>4</option><option>3</option></select></label>
+  <label class="ctl" id="ad-x1"><span id="ad-xl">Sine frequency <b id="ad-xv"></b></span><input type="range" id="ad-x" min="1" max="200" value="10"></label></div>
+ <canvas class="cv" id="ad-cv" style="height:250px;margin-bottom:12px"></canvas>
+ <div class="readouts" id="ad-ro"></div><p class="hint" id="ad-h"></p>`;
+ const ecgV=t=>{const T=.8,x=((t%T)+T)%T,g=(m,s,a)=>a*Math.exp(-((x-m)**2)/(2*s*s));return 1.65+g(.16,.025,.12)+g(.27,.008,-.15)+g(.30,.012,1.1)+g(.33,.009,-.25)+g(.52,.04,.3)};
+ const sEl=$('#ad-s',root), xEl=$('#ad-x',root);
+ function setX(){const s=sEl.value; const box=$('#ad-x1',root); box.hidden=(s==='ecg');
+  if(s==='sine'){xEl.min=1;xEl.max=200;xEl.step=1; if(+xEl.value>200)xEl.value=10; $('#ad-xl',root).firstChild.textContent='Sine frequency ';}
+  if(s==='pot'){xEl.min=0;xEl.max=330;xEl.step=1;xEl.value=150;$('#ad-xl',root).firstChild.textContent='Wiper voltage ';}
+  if(s==='temp'){xEl.min=-10;xEl.max=80;xEl.step=1;xEl.value=27;$('#ad-xl',root).firstChild.textContent='Die temperature ';}}
+ const V=(t)=>{const s=sEl.value,x=+xEl.value; if(s==='ecg')return ecgV(t); if(s==='sine')return 1.65+1.2*Math.sin(2*Math.PI*x*t); if(s==='pot')return x/100+0.004*Math.sin(t*90); return 0.706-(x-27)*0.001721;};
+ sEl.oninput=()=>{setX();api.touched();}; ['#ad-fs','#ad-b','#ad-x'].forEach(s=>$(s,root).addEventListener('input',()=>api.touched()));
+ setX(); const cv=$('#ad-cv',root); const t0=performance.now();
+ api.loop((dt,now)=>{
+  const s=sEl.value, fs=+$('#ad-fs',root).value, bits=+$('#ad-b',root).value, lv=2**bits, x=+xEl.value;
+  $('#ad-fv',root).textContent=fs+' Hz';
+  $('#ad-xv',root).textContent= s==='sine'?x+' Hz': s==='pot'?(x/100).toFixed(2)+' V': x+' °C';
+  const tn=(now-t0)/1000*(s==='sine'?0.25:1), Wn= s==='sine'? 0.25 : 1.6, ta=tn-Wn;
+  const [c,w,h]=hiDPI(cv); c.clearRect(0,0,w,h);
+  const L=46,R=w-10,T=12,B=h-24; const vmin=s==='temp'?0.55:0, vmax=s==='temp'?0.8:3.3;
+  const X=t=>L+(t-ta)/Wn*(R-L), Y=v=>B-(v-vmin)/(vmax-vmin)*(B-T);
+  c.font='10px '+css('--f-mono'); c.fillStyle=css('--muted'); c.strokeStyle=css('--grid');
+  for(let i=0;i<=4;i++){const v=vmin+(vmax-vmin)*i/4; c.beginPath(); c.moveTo(L,Y(v)); c.lineTo(R,Y(v)); c.stroke(); c.fillText(v.toFixed(2),4,Y(v)+3);}
+  if(bits<=4){c.strokeStyle=css('--copper'); c.globalAlpha=.25; for(let k=0;k<=lv;k++){const v=k/lv*3.3; if(v<vmin||v>vmax)continue; c.beginPath(); c.moveTo(L,Y(v)); c.lineTo(R,Y(v)); c.stroke();} c.globalAlpha=1;}
+  c.strokeStyle=css('--sig2'); c.lineWidth=1.6; c.beginPath(); for(let i=0;i<=600;i++){const t=ta+Wn*i/600; const y=Y(V(t)); i?c.lineTo(X(t),y):c.moveTo(X(t),y);} c.stroke();
+  const q=v=>Math.max(0,Math.min(lv-1,Math.floor(v/3.3*lv)));
+  const k0=Math.ceil(ta*fs), k1=Math.floor(tn*fs); let lastCode=0,lastV=0;
+  c.strokeStyle=css('--sig1'); c.lineWidth=2; c.beginPath(); let first=true;
+  for(let k=k0;k<=k1;k++){const t=k/fs, code=q(V(t)), vq=(code+.5)/lv*3.3, x0=X(t), x1=X(Math.min(tn,(k+1)/fs)); if(first){c.moveTo(x0,Y(vq));first=false;} else c.lineTo(x0,Y(vq)); c.lineTo(x1,Y(vq)); lastCode=code; lastV=vq;}
+  c.stroke(); c.lineWidth=1;
+  if(k1-k0<160){c.fillStyle=css('--copper'); for(let k=k0;k<=k1;k++){const t=k/fs,vq=(q(V(t))+.5)/lv*3.3; c.beginPath(); c.arc(X(t),Y(vq),2.6,0,7); c.fill();}}
+  c.fillStyle=css('--muted'); c.fillText(s==='sine'?'time ×4 slow motion':'time (s)',L,h-6); c.fillStyle=css('--sig2'); c.fillText('analog',R-110,h-6); c.fillStyle=css('--sig1'); c.fillText('digital',R-60,h-6);
+  const raw12=Math.round(lastCode*(4096/lv));
+  const roA=[['Raw ('+bits+'-bit)',lastCode+' / '+(lv-1)],['As 12-bit',raw12],['Voltage',(raw12*3.3/4096).toFixed(3)+' V'],['1 LSB',(3300/lv).toFixed(bits>8?3:1)+' mV']];
+  if(s==='temp') roA.push(['T = 27 − (V−0.706)/0.001721',(27-(raw12*3.3/4096-0.706)/0.001721).toFixed(1)+' °C']);
+  $('#ad-ro',root).innerHTML=ro(roA);
+  const H=$('#ad-h',root);
+  if(s==='sine'&&x>fs/2){const al=Math.abs(x-Math.round(x/fs)*fs); H.className='hint warn'; H.textContent=`Aliasing: a ${x} Hz sine sampled at ${fs} Hz looks like ${al.toFixed(0)} Hz. Raise the sample rate above ${2*x} Hz.`;}
+  else if(s==='temp'&&bits===12){H.className='hint'; H.textContent='The sensor moves only 1.721 mV per °C, about two LSBs. Real firmware averages many readings.';}
+  else if(s==='ecg'&&fs<150){H.className='hint warn'; H.textContent='The QRS complex is getting smeared. Clinical ECG uses 250–1000 Hz.';}
+  else {H.className='hint'; H.textContent= bits<=4?'Few bits = big steps. This is quantization error, visible as the staircase.':'Drag resolution down to 4 bits to see quantization, or sample rate down to see the waveform break up.';}
+ });
+},
+cases:[['ECG with AD8232','Biomedical','The AD8232 module outputs a 1.65 V-centred ECG. GP26 sampled at 500 Hz is enough for heart rate, HRV and basic arrhythmia detection.'],['Body temperature probe','Clinical','An NTC thermistor in a divider changes voltage with temperature. Average 64 readings, then convert with the Steinhart–Hart equation.'],['Battery monitor','Wearables','On a Pico, GP29 reads VSYS ÷ 3. Multiply by 3 and warn the patient before a portable monitor dies.']],
+code:{lang:'MicroPython',src:`from machine import ADC
+
+pot  = ADC(26)        # GP26 = ADC0
+temp = ADC(4)         # internal sensor
+
+raw = pot.read_u16() >> 4          # 0..4095
+v   = raw * 3.3 / 4096
+
+vt  = temp.read_u16() * 3.3 / 65535
+t   = 27 - (vt - 0.706) / 0.001721
+
+print(raw, round(v, 3), "V |", round(t, 1), "C")`},
+quiz:[['A 12-bit reading of 2048 with a 3.3 V reference is about',['0.8 V','1.65 V','2.48 V','3.3 V'],1,'2048 ÷ 4096 × 3.3 V = 1.65 V, half scale.'],['To capture ECG content up to 150 Hz without aliasing, sample at least at',['75 Hz','150 Hz','300 Hz','4 096 Hz'],2,'Nyquist: more than 2 × 150 Hz. In practice 500 Hz gives margin for the anti-alias filter.'],['ADC channel 4 is connected to',['GP29','The internal temperature sensor','VBUS','A DAC'],1,'AINSEL = 4 selects the on-die temperature sensor.']]
+});
+
+/* ---------- 4 UART ---------- */
+M.push({id:'uart', name:'UART', full:'Universal asynchronous receiver-transmitter (2 × PL011)', tag:'Two wires and a shared promise about time',
+pins:'UART0: <b>GP0 TX / GP1 RX</b> (also GP12/13, GP16/17). UART1: <b>GP4 TX / GP5 RX</b> (also GP8/9). Cross TX→RX and share GND.',
+dia:{blocks:[['pico',30,90,150,120,'RP2040','UART0'],['dev',420,90,150,120,'Module','Bluetooth · GPS · PC'],['fifo',205,25,190,44,'32-byte FIFOs','TX and RX buffers'],['frame',215,136,170,28,'S 0 1 2 3 4 5 6 7 P',''],['baud',205,232,190,44,'Baud generator','clk_peri ÷ (16 × baud)']],
+ wires:[['tx','M180,118 L420,118','TX → RX',190,111],['rx','M420,182 L180,182','RX ← TX',190,198],['gnd','M105,210 L105,288 L495,288 L495,210','GND',112,282]]},
+learn:[
+ {t:'Two wires, crossed',b:'UART needs no clock wire. Your TX pin drives the other side\'s RX, their TX drives your RX, and both share ground. Each direction is independent, so talking and listening happen at once.',show:['pico','dev','tx','rx','gnd'],flow:['tx','rx'],key:['2 + GND','wires for full duplex']},
+ {t:'The frame',b:'The line rests high. A start bit pulls it low, which tells the receiver to begin timing. Eight data bits follow, least significant first, then an optional parity bit and a high stop bit.',show:['frame'],flow:['tx'],key:['10 bits','per byte in 8N1 format']},
+ {t:'Baud rate is the promise',b:'Because there is no clock wire, both sides must agree on the bit time: 9600, 115200 baud and so on. The receiver samples the middle of each bit. If the clocks disagree by more than about 5%, the last bits are sampled in the wrong place.',show:['baud'],flow:['tx'],key:['86.8 µs','one 8N1 byte at 115 200 baud']},
+ {t:'FIFOs absorb bursts',b:'Each RP2040 UART has 32-byte transmit and receive FIFOs, so the CPU can hand over a burst and walk away. An interrupt or DMA request fires when data arrives or space frees up.',show:['fifo'],flow:['tx','rx'],key:['32 bytes','FIFO depth each way']}],
+sim(root,api){
+ root.innerHTML=`<div class="ctls">
+  <label class="ctl"><span>Text to send</span><input id="u-text" maxlength="5" value="Hi" type="text"></label>
+  <label class="ctl"><span>Baud rate</span><select id="u-baud"><option>9600</option><option selected>115200</option><option>921600</option></select></label>
+  <label class="ctl"><span>Format</span><select id="u-par"><option value="N">8N1 (no parity)</option><option value="E">8E1 (even)</option><option value="O">8O1 (odd)</option></select></label>
+  <label class="ctl"><span>Receiver clock error <b id="u-ev">0%</b></span><input type="range" id="u-err" min="0" max="10" step="0.5" value="0"></label>
+  <button class="btn" id="u-play">Replay</button></div>
+ <div class="la" id="u-la"></div><div class="readouts" id="u-ro"></div><p class="hint" id="u-h"></p>`;
+ const la=mkLA($('#u-la',root));
+ function build(){
+  const s=($('#u-text',root).value||' ').slice(0,5), baud=+$('#u-baud',root).value, par=$('#u-par',root).value, err=+$('#u-err',root).value;
+  $('#u-ev',root).textContent=err+'%';
+  const vals=[], bitsB=[], chB=[], rxB=[], marks=[]; let bad=0;
+  const push=(v,lab)=>{ if(lab) bitsB.push({t0:vals.length,t1:vals.length+1,text:lab}); vals.push(v); };
+  push(1);push(1);
+  for(const ch of s){
+   const code=ch.charCodeAt(0)&255, f0=vals.length; push(0,'S');
+   let ones=0; for(let i=0;i<8;i++){const b=(code>>i)&1; ones+=b; push(b,String(i));}
+   if(par!=='N') push(par==='E'?ones%2:1-ones%2,'P');
+   push(1,'T'); const fEnd=vals.length;
+   chB.push({t0:f0,t1:fEnd,text:`'${ch}' ${hex(code)}`});
+   const rp=1-err/100; let rc=0;
+   for(let k=0;k<8;k++){const tt=f0+(1+k+.5)*rp; marks.push({row:0,t:tt}); rc|=(vals[Math.floor(tt)]||0)<<k;}
+   const stopT=f0+(9+(par!=='N'?1:0)+.5)*rp; marks.push({row:0,t:stopT,color:'--sig4'});
+   const fe=vals[Math.floor(stopT)]===0, ok=rc===code&&!fe; if(!ok)bad++;
+   const shown=rc>=32&&rc<127?`'${String.fromCharCode(rc)}'`:'·';
+   rxB.push({t0:f0,t1:fEnd,text:`${shown} ${hex(rc)}${fe?' FE':''}`,color:ok?'--ok':'--danger'});
+   push(1);
+  }
+  push(1);
+  la.play({units:vals.length,px:15,rows:[{name:'TX line',type:'d',vals,color:'--sig1'},{name:'bit',type:'bus',items:bitsB,color:'--sig2'},{name:'byte sent',type:'bus',items:chB,color:'--sig4'},{name:'RX reads',type:'bus',items:rxB}],marks});
+  const x=125e6/(16*baud), bi=Math.floor(x), bf=Math.round((x-bi)*64), act=125e6/(16*(bi+bf/64)), nb=par==='N'?10:11;
+  $('#u-ro',root).innerHTML=ro([['UARTIBRD',bi],['UARTFBRD',bf],['Actual baud',act.toFixed(0)],['Divider error',((act-baud)/baud*100).toFixed(3)+'%'],['Bit time',fmtT(1/baud)],['Frame time',fmtT(nb/baud)],['Max bytes/s',Math.floor(baud/nb).toLocaleString('en-US')]]);
+  const h=$('#u-h',root);
+  if(bad){h.className='hint warn'; h.textContent=`${bad} byte(s) garbled. The receiver's sample dots drift away from bit centres; by the last bits they land in the neighbour. This is what a baud mismatch looks like on a terminal: random symbols.`;}
+  else {h.className='hint'; h.textContent=err?`Still decoding at ${err}% error: drift stays under half a bit up to about 5%.`:'Copper dots are where the receiver samples. Push the clock error past 5% and watch the dots slide off the bit centres.';}
+ }
+ ['#u-text','#u-baud','#u-par','#u-err'].forEach(s=>$(s,root).addEventListener('input',()=>{build();api.touched();}));
+ $('#u-play',root).onclick=()=>{build();api.touched();}; build();
+},
+cases:[['Bluetooth pulse-ox logger','Biomedical','An HC-05 module on UART1 streams SpO₂ and pulse rate to a phone at 9600 baud. To the RP2040 it is just a serial port.'],['Ambulance GPS','Emergency','A NEO-6M GPS sends NMEA sentences such as $GPGGA once a second. Parse them to send location with an alert.'],['Debug console','Every project','print() over GP0/GP1 to a USB-serial adapter is the first instrument you reach for when firmware misbehaves.']],
+code:{lang:'MicroPython',src:`from machine import UART, Pin
+
+uart = UART(0, baudrate=115200, bits=8, parity=None, stop=1,
+            tx=Pin(0), rx=Pin(1))
+
+uart.write(b"SpO2=97,PR=72\\n")
+
+while True:
+    if uart.any():                 # bytes waiting in RX FIFO
+        line = uart.readline()
+        print("got:", line)`},
+quiz:[['An idle UART line sits at which level?',['Low','High','Floating','Toggling'],1,'Idle is high (mark). The falling edge of the start bit is how the receiver knows a byte is coming.'],['At 115 200 baud in 8N1, one byte takes about',['8.7 µs','69 µs','86.8 µs','1 ms'],2,'10 bits ÷ 115 200 bit/s = 86.8 µs.'],['The Pico\'s TX pin connects to the module\'s',['TX','RX','SDA','VBUS'],1,'Transmit drives receive. TX to TX means two outputs fighting and nothing heard.']]
+});
+
+/* ---------- 5 I2C ---------- */
+M.push({id:'i2c', name:'I²C', full:'Inter-Integrated Circuit bus (2 × DW_apb_i2c)', tag:'Many sensors, two shared wires',
+pins:'I2C0: <b>GP4 SDA / GP5 SCL</b> (and other pairs). I2C1: <b>GP2 SDA / GP3 SCL</b>, GP6/7. Add 4.7 kΩ pull-ups to 3.3 V if the module lacks them.',
+dia:{blocks:[['spd',30,20,140,46,'100k · 400k · 1M','Std · Fast · Fast+'],['pu',200,20,110,46,'Pull-ups','4.7 kΩ to 3.3 V'],['addr',330,20,240,46,'7-bit address + R/W','one device answers ACK'],['pico',30,110,130,90,'RP2040','I2C0 controller'],['s1',330,230,110,56,'MAX30102','addr 0x57'],['s2',460,230,110,56,'MPU-6050','addr 0x68']],
+ wires:[['sda','M160,135 L580,135','SDA',168,129],['scl','M160,175 L580,175','SCL',168,169],['pu1','M235,66 L235,135'],['pu2','M275,66 L275,175'],['t1','M370,135 L370,230'],['t2','M400,175 L400,230'],['t3','M500,135 L500,230'],['t4','M530,175 L530,230']]},
+learn:[
+ {t:'One bus, many devices',b:'I²C uses two wires shared by every device: SDA carries data, SCL carries the clock. The RP2040 is the controller and starts every conversation. Sensors are targets that only speak when spoken to.',show:['pico','sda','scl','s1','s2','t1','t2','t3','t4'],flow:['sda','scl'],key:['2 wires','for up to 112 addresses']},
+ {t:'Nobody pushes high',b:'Every pin on the bus is open-drain: it can pull the line low or let go. Pull-up resistors bring it back high. That is why two devices can never short each other, and why a missing pull-up leaves a dead bus.',show:['pu','pu1','pu2'],flow:['pu1','pu2'],key:['4.7 kΩ','typical pull-up at 100–400 kHz']},
+ {t:'Call a name, wait for a reply',b:'START is SDA falling while SCL is high. The controller then sends a 7-bit address and a read/write bit. On the 9th clock the device with that address pulls SDA low: ACK. Silence is a NACK.',show:['addr'],flow:['sda','t1'],key:['9 clocks','address + R/W + ACK']},
+ {t:'Speed and trade-offs',b:'Standard mode is 100 kHz, Fast is 400 kHz, Fast-mode Plus is 1 MHz. Long cables add capacitance and round the edges, so slower is often more reliable. Data changes only while SCL is low; it is read while SCL is high.',show:['spd'],flow:['scl','sda'],key:['≈ 25 µs','one byte at 400 kHz incl. ACK']}],
+sim(root,api){
+ root.innerHTML=`<div class="ctls">
+  <label class="ctl"><span>Target address (hex)</span><input type="text" id="i-a" value="57" maxlength="2"></label>
+  <label class="ctl"><span>Direction</span><select id="i-rw"><option value="0">Write (register pointer)</option><option value="1">Read (one byte)</option></select></label>
+  <label class="ctl"><span id="i-dl">Byte (hex)</span><input type="text" id="i-d" value="FF" maxlength="2"></label>
+  <label class="ctl"><span>Clock</span><select id="i-f"><option value="100000">100 kHz</option><option value="400000" selected>400 kHz</option><option value="1000000">1 MHz</option></select></label>
+  <label class="chk"><input type="checkbox" id="i-p" checked> Device present on bus</label>
+  <button class="btn" id="i-play">Replay</button></div>
+ <div class="la" id="i-la"></div><div class="readouts" id="i-ro"></div><p class="hint" id="i-h"></p>`;
+ const la=mkLA($('#i-la',root));
+ function build(){
+  const a=parseHex($('#i-a',root).value,0x57)&0x7f, rw=+$('#i-rw',root).value, d=parseHex($('#i-d',root).value,0xff)&255, f=+$('#i-f',root).value, pres=$('#i-p',root).checked;
+  $('#i-dl',root).textContent=rw?'Device replies (hex)':'Byte to write (hex)';
+  const scl=[],sda=[],dec=[],drv=[]; let clocks=0;
+  const u=(c,dd)=>{scl.push(c);sda.push(dd);};
+  const bit=(b,who)=>{const t0=scl.length; u(0,b);u(1,b);u(1,b);u(0,b); drv.push({t0,t1:t0+4,text:who,color:who==='target'?'--sig3':'--sig2'}); clocks++;};
+  u(1,1);u(1,1);
+  let t=scl.length; u(1,1);u(1,0);u(0,0); dec.push({t0:t,t1:scl.length,text:'START',color:'--sig4'});
+  const ab=(a<<1)|rw; t=scl.length; for(let i=7;i>=0;i--) bit((ab>>i)&1,'ctrl'); dec.push({t0:t,t1:scl.length,text:`ADDR ${hex(a)} ${rw?'R':'W'}`});
+  t=scl.length; bit(pres?0:1,pres?'target':'nobody'); dec.push({t0:t,t1:scl.length,text:pres?'ACK':'NACK',color:pres?'--ok':'--danger'});
+  if(pres){ t=scl.length; for(let i=7;i>=0;i--) bit((d>>i)&1,rw?'target':'ctrl'); dec.push({t0:t,t1:scl.length,text:`DATA ${hex(d)}`});
+   t=scl.length; bit(rw?1:0,rw?'ctrl':'target'); dec.push({t0:t,t1:scl.length,text:rw?'NACK (done)':'ACK',color:rw?'--sig4':'--ok'}); }
+  t=scl.length; u(0,0);u(1,0);u(1,1); dec.push({t0:t,t1:scl.length,text:'STOP',color:'--sig4'}); u(1,1);u(1,1);
+  la.play({units:scl.length,px:8,rows:[{name:'SCL',type:'d',vals:scl,color:'--sig2'},{name:'SDA',type:'d',vals:sda,color:'--sig1'},{name:'decode',type:'bus',items:dec,color:'--sig1'},{name:'drives SDA',type:'bus',items:drv}]});
+  $('#i-ro',root).innerHTML=ro([['Address byte on wire',hex(ab)],['SCL clocks',clocks],['Transaction time',fmtT((clocks+2)/f)],['Result',pres?'ACK':'NACK → OSError']]);
+  const h=$('#i-h',root);
+  if(!pres){h.className='hint warn';h.textContent='Nobody pulled SDA low on the 9th clock, so the pull-up kept it high: NACK. In MicroPython this is OSError: [Errno 5] EIO. Check wiring, address and pull-ups.';}
+  else {h.className='hint';h.textContent=rw?'In a read, the target drives the data bits (orange in the bottom lane) and the controller NACKs the last byte to say "enough".':'0x57 is the MAX30102. Writing 0xFF points to its PART_ID register; a following read returns 0x15.';}
+ }
+ ['#i-a','#i-rw','#i-d','#i-f','#i-p'].forEach(s=>$(s,root).addEventListener('input',()=>{build();api.touched();}));
+ $('#i-play',root).onclick=()=>{build();api.touched();}; build();
+},
+cases:[['MAX30102 at 0x57','Biomedical','Red and IR LEDs plus a photodiode give PPG for heart rate and SpO₂. Read its sample FIFO over I²C at 400 kHz.'],['MPU-6050 at 0x68','Wearables','A 6-axis IMU on the same bus detects falls in elderly patients from a sudden acceleration spike followed by stillness.'],['SSD1306 OLED at 0x3C','Bedside display','A 128×64 display shows live vitals. Three devices, three addresses, still only two wires.']],
+code:{lang:'MicroPython',src:`from machine import I2C, Pin
+
+i2c = I2C(0, sda=Pin(4), scl=Pin(5), freq=400_000)
+
+print([hex(a) for a in i2c.scan()])   # e.g. ['0x57', '0x68']
+
+part = i2c.readfrom_mem(0x57, 0xFF, 1)  # MAX30102 PART_ID
+print(hex(part[0]))                     # expect 0x15
+
+i2c.writeto_mem(0x68, 0x6B, b'\\x00')  # wake MPU-6050`},
+quiz:[['Why do SDA and SCL need pull-up resistors?',['The pins are open-drain and can only pull low','To limit current into the sensor','To set the device address','Only to filter noise'],0,'Nothing on the bus drives high. The resistor does, which lets many devices share the wire safely.'],['On the 9th clock the target leaves SDA high. The controller sees',['ACK','NACK','START','Clock stretching'],1,'High on the acknowledge clock means no device claimed the address.'],['Including R/W and ACK, the address phase of a 7-bit address uses',['7 clocks','8 clocks','9 clocks','10 clocks'],2,'7 address bits + 1 R/W bit + 1 ACK bit = 9 clocks.']]
+});
+
+/* ---------- 6 SPI ---------- */
+M.push({id:'spi', name:'SPI', full:'Serial Peripheral Interface (2 × PL022 SSP)', tag:'Fast, full duplex, one chip-select per device',
+pins:'SPI0: <b>GP18 SCK, GP19 TX/MOSI, GP16 RX/MISO, GP17 CSn</b>. SPI1: GP10 SCK, GP11 TX, GP12 RX, GP13 CSn. Any GPIO can be a manual CS.',
+dia:{blocks:[['modes',215,20,170,46,'Mode 0 … 3','CPOL · CPHA'],['pico',30,80,130,150,'RP2040','SPI0 controller'],['slave',440,80,140,150,'ADS1292R','ECG front-end'],['ring',215,240,170,46,'Shift registers swap','8 bits out, 8 bits in']],
+ wires:[['sck','M160,100 L440,100','SCK',172,94],['mosi','M160,135 L440,135','MOSI',172,129],['miso','M440,170 L160,170','MISO',172,164],['cs','M160,205 L440,205','CS',172,199]]},
+learn:[
+ {t:'Four wires, one clock',b:'SPI sends the clock on its own wire, SCK, so nobody has to agree on a baud rate. MOSI carries controller-to-device data, MISO carries device-to-controller data, and CS selects which device is listening.',show:['pico','slave','sck','mosi','miso','cs'],flow:['sck'],key:['4 wires','SCK · MOSI · MISO · CS']},
+ {t:'Chip-select is the address',b:'There is no address byte. Pulling a device\'s CS low wakes it up; every other device ignores the bus. Three sensors need three CS pins, which is the price paid for SPI\'s speed.',show:[],flow:['cs','mosi'],key:['1 CS','per device on the bus']},
+ {t:'Every clock swaps one bit',b:'Inside each side is a shift register. Each clock pushes one bit out on MOSI and pulls one in on MISO at the same moment. After 8 clocks, the two bytes have traded places. You always receive while you send.',show:['ring'],flow:['mosi','miso'],key:['62.5 MHz','RP2040 SPI maximum (clk_peri ÷ 2)']},
+ {t:'Four modes',b:'CPOL sets whether SCK idles low (0) or high (1). CPHA sets whether data is sampled on the first clock edge (0) or the second (1). The datasheet of every SPI chip names its mode. ADS1292R uses mode 1.',show:['modes'],flow:['sck','mosi','miso'],key:['Mode 0','most common: idle low, sample on rising']}],
+sim(root,api){
+ root.innerHTML=`<div class="ctls">
+  <label class="ctl"><span>Mode</span><select id="s-m"><option value="0">0 (CPOL 0, CPHA 0)</option><option value="1" selected>1 (CPOL 0, CPHA 1)</option><option value="2">2 (CPOL 1, CPHA 0)</option><option value="3">3 (CPOL 1, CPHA 1)</option></select></label>
+  <label class="ctl"><span>MOSI byte (hex)</span><input type="text" id="s-o" value="20" maxlength="2"></label>
+  <label class="ctl"><span>MISO reply (hex)</span><input type="text" id="s-i" value="73" maxlength="2"></label>
+  <label class="ctl"><span>SCK</span><select id="s-f"><option value="1000000">1 MHz</option><option value="10000000" selected>10 MHz</option><option value="62500000">62.5 MHz</option></select></label>
+  <button class="btn" id="s-play">Replay</button></div>
+ <div class="la" id="s-la"></div><div class="readouts" id="s-ro"></div><p class="hint" id="s-h"></p>`;
+ const la=mkLA($('#s-la',root));
+ function build(){
+  const m=+$('#s-m',root).value, cpol=m>>1, cpha=m&1, mo=parseHex($('#s-o',root).value,0x20)&255, mi=parseHex($('#s-i',root).value,0x73)&255, f=+$('#s-f',root).value;
+  const cs=[],sck=[],mosi=[],miso=[],dO=[],dI=[],marks=[];
+  const u=(c,k,o,i)=>{cs.push(c);sck.push(k);mosi.push(o);miso.push(i);};
+  u(1,cpol,null,null);u(1,cpol,null,null);u(0,cpol,null,null);
+  const t0=cs.length;
+  for(let i=7;i>=0;i--){const bo=(mo>>i)&1, bi=(mi>>i)&1, a=cpha?1-cpol:cpol, b=cpha?cpol:1-cpol; const tb=cs.length; u(0,a,bo,bi);u(0,b,bo,bi); marks.push({row:2,t:tb+1},{row:3,t:tb+1});}
+  dO.push({t0,t1:cs.length,text:'MOSI '+hex(mo)}); dI.push({t0,t1:cs.length,text:'MISO '+hex(mi),color:'--sig3'});
+  u(0,cpol,null,null);u(1,cpol,null,null);u(1,cpol,null,null);
+  la.play({units:cs.length,px:22,rows:[{name:'CS',type:'d',vals:cs,color:'--sig4'},{name:'SCK',type:'d',vals:sck,color:'--sig2'},{name:'MOSI',type:'d',vals:mosi,color:'--sig1'},{name:'MISO',type:'d',vals:miso,color:'--sig3'},{name:'decode',type:'bus',items:dO},{name:'reply',type:'bus',items:dI}],marks});
+  const edge=(cpha===0)?(cpol?'falling (1st edge)':'rising (1st edge)'):(cpol?'rising (2nd edge)':'falling (2nd edge)');
+  $('#s-ro',root).innerHTML=ro([['CPOL / CPHA',cpol+' / '+cpha],['Sample edge',edge],['Byte time',fmtT(8/f)],['Throughput',(f/8/1e6).toFixed(2)+' MB/s']]);
+  $('#s-h',root).textContent='Copper dots mark the sampling instant on MOSI and MISO. Change the mode and watch the clock shape move while the dots stay mid-bit: both sides just need to agree.';
+ }
+ ['#s-m','#s-o','#s-i','#s-f'].forEach(s=>$(s,root).addEventListener('input',()=>{build();api.touched();}));
+ $('#s-play',root).onclick=()=>{build();api.touched();}; build();
+},
+cases:[['ADS1292R ECG front-end','Biomedical','Two 24-bit channels at 500 SPS. On every DRDY pulse, clock out 9 bytes over SPI mode 1. Much faster than I²C could manage.'],['microSD logging','Holter monitoring','A 24-hour ECG recording is tens of megabytes. SD cards in SPI mode let a Pico write it with a few wires.'],['TFT display','Patient monitors','An ILI9341 screen redraws a scrolling waveform at 30+ MHz SPI, combined with DMA so the CPU keeps sampling.']],
+code:{lang:'MicroPython',src:`from machine import SPI, Pin
+
+spi = SPI(0, baudrate=1_000_000, polarity=0, phase=1,   # mode 1
+          sck=Pin(18), mosi=Pin(19), miso=Pin(16))
+cs = Pin(17, Pin.OUT, value=1)
+
+tx = bytes([0x20, 0x00, 0x00])   # ADS1292: RREG ID, 1 register
+rx = bytearray(3)
+
+cs(0)
+spi.write_readinto(tx, rx)       # send and receive together
+cs(1)
+print("ID register:", hex(rx[2]))`},
+quiz:[['Which line chooses the device that is listening?',['SCK','MOSI','CS','MISO'],2,'SPI has no address; chip-select low is the address.'],['SPI mode 3 means',['CPOL 0, CPHA 0','CPOL 1, CPHA 1','CPOL 0, CPHA 1','CPOL 1, CPHA 0'],1,'Mode number = CPOL × 2 + CPHA.'],['Why is SPI usually faster than I²C?',['Push-pull lines, full duplex and no address phase','It uses fewer wires','It has error correction','It runs over USB'],0,'Actively driven edges switch fast; I²C waits for pull-up resistors to raise each line.']]
+});
+
+/* ---------- 7 RTC ---------- */
+M.push({id:'rtc', name:'RTC', full:'Real-time clock with calendar and alarm', tag:'Knowing what day it is',
+pins:'Internal block. Clocked by clk_rtc. Note: the RP2040 RTC loses time when power goes — add a DS3231 on I²C for battery-backed time.',
+dia:{blocks:[['xosc',20,40,140,50,'XOSC','12 MHz crystal'],['div',200,40,150,50,'÷ 256','clk_rtc 46 875 Hz'],['sec',390,40,190,50,'1 Hz tick','CLKDIV_M1 = 46 874'],['alarm',150,140,190,60,'Alarm match','any field can be wildcard'],['cal',390,140,190,60,'Calendar','yr mo day dotw hh mm ss'],['irq',150,240,190,46,'RTC_IRQ','wake, log, remind'],['bat',400,240,180,46,'No battery domain','pair with DS3231']],
+ wires:[['w1','M160,65 L200,65'],['w2','M350,65 L390,65'],['w3','M485,90 L485,140'],['w4','M390,170 L340,170'],['w5','M245,200 L245,240']]},
+learn:[
+ {t:'From crystal to one second',b:'The 12 MHz crystal is divided by 256 to make clk_rtc at 46 875 Hz. The RTC counts 46 875 of those and produces a one-second tick. Crystal accuracy, around 30 ppm, becomes clock accuracy: about 2.6 seconds a day.',show:['xosc','div','sec','w1','w2'],flow:['w1','w2'],key:['46 875 Hz','clk_rtc on a Pico']},
+ {t:'A calendar in hardware',b:'Each tick updates seconds, minutes, hours, day, month, year and day of the week, including month lengths and leap years. Firmware just reads the fields; no date maths needed.',show:['cal','w3'],flow:['w3'],key:['RTC_0 · RTC_1','two registers hold the whole date']},
+ {t:'Alarms that match patterns',b:'The alarm compares chosen fields only. Set seconds = 0 and leave the rest as wildcards to fire every minute. Set hour = 8, minute = 0, second = 0 for a daily 08:00 reminder.',show:['alarm','w4'],flow:['w4'],key:['wildcard','any field can be "don\'t care"']},
+ {t:'Interrupts, and its limits',b:'A match raises RTC_IRQ, which can even wake the chip from sleep. The RTC has no battery input, so on power loss it resets. Medical loggers pair it with an external battery-backed RTC.',show:['irq','bat','w5'],flow:['w4','w5'],key:['≈ 2.6 s/day','drift from a 30 ppm crystal']}],
+sim(root,api){
+ root.innerHTML=`<div class="two"><div class="ro" style="padding:16px"><small id="r-date">date</small><div class="clock" id="r-clk">00:00:00</div>
+   <div class="mono" style="margin-top:10px;font-size:12.5px;color:var(--muted)">RTC_1 = <b id="r-1" style="color:var(--ink)"></b><br>RTC_0 = <b id="r-0" style="color:var(--ink)"></b></div></div>
+  <div><h4>Alarm match</h4><div class="ctls" style="margin-bottom:8px">
+   <label class="ctl" style="min-width:90px"><span>Hour</span><input type="number" id="r-ah" min="0" max="23" value="8"></label><label class="chk"><input type="checkbox" id="r-ahx" checked> any</label>
+   <label class="ctl" style="min-width:90px"><span>Minute</span><input type="number" id="r-am" min="0" max="59" value="0"></label><label class="chk"><input type="checkbox" id="r-amx" checked> any</label>
+   <label class="ctl" style="min-width:90px"><span>Second</span><input type="number" id="r-as" min="0" max="59" value="0"></label><label class="chk"><input type="checkbox" id="r-asx"> any</label></div>
+   <div class="ctls"><label class="ctl"><span>Speed</span><select id="r-sp"><option value="1">1× real time</option><option value="10" selected>10×</option><option value="60">60×</option></select></label>
+   <button class="btn" id="r-pill">Daily 08:00 pill reminder</button></div><p class="hint" id="r-desc"></p></div></div>
+ <div class="log" id="r-log"><div>Alarm log</div></div>`;
+ let tms=Date.now(), acc=0, lastS=Math.floor(tms/1000);
+ const logEl=$('#r-log',root), log=s=>{const d=document.createElement('div');d.innerHTML=s;logEl.prepend(d);};
+ const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+ const f2=n=>String(n).padStart(2,'0');
+ function desc(){const p=[]; if(!$('#r-ahx',root).checked)p.push('hour = '+f2($('#r-ah',root).value)); if(!$('#r-amx',root).checked)p.push('minute = '+f2($('#r-am',root).value)); if(!$('#r-asx',root).checked)p.push('second = '+f2($('#r-as',root).value));
+  const t=p.length?'Fires when '+p.join(' and ')+'.':'All wildcards: the alarm is disabled.';
+  const ev=$('#r-asx',root).checked?'':($('#r-amx',root).checked?' That is once every minute.':$('#r-ahx',root).checked?' That is once every hour.':' That is once a day.');
+  $('#r-desc',root).textContent=t+(p.length?ev:'');}
+ $$('input,select',root).forEach(e=>e.addEventListener('input',()=>{desc();api.touched();}));
+ $('#r-pill',root).onclick=()=>{ $('#r-ah',root).value=8;$('#r-am',root).value=0;$('#r-as',root).value=0;['#r-ahx','#r-amx','#r-asx'].forEach(s=>$(s,root).checked=false); const d=new Date(tms); d.setHours(7,59,40,0); tms=d.getTime(); lastS=Math.floor(tms/1000); $('#r-sp',root).value=1; desc(); api.touched(); log('Clock set to 07:59:40. Wait for 08:00:00.');};
+ desc();
+ api.loop(dt=>{
+  tms+=dt*(+$('#r-sp',root).value); const s=Math.floor(tms/1000);
+  for(let k=Math.max(lastS+1,s-120);k<=s;k++){ const d=new Date(k*1000);
+   const mh=$('#r-ahx',root).checked||d.getHours()==+$('#r-ah',root).value, mm=$('#r-amx',root).checked||d.getMinutes()==+$('#r-am',root).value, ms=$('#r-asx',root).checked||d.getSeconds()==+$('#r-as',root).value;
+   const any=!($('#r-ahx',root).checked&&$('#r-amx',root).checked&&$('#r-asx',root).checked);
+   if(any&&mh&&mm&&ms){ log(`<b>RTC_IRQ</b> at ${f2(d.getHours())}:${f2(d.getMinutes())}:${f2(d.getSeconds())}`); if(hasA) anime({targets:$('#r-clk',root),scale:[1.08,1],color:[css('--accent'),css('--ink')],duration:900,easing:'easeOutQuad'}); } }
+  lastS=s; const d=new Date(tms);
+  $('#r-clk',root).textContent=`${f2(d.getHours())}:${f2(d.getMinutes())}:${f2(d.getSeconds())}`;
+  $('#r-date',root).textContent=`${d.getFullYear()}-${f2(d.getMonth()+1)}-${f2(d.getDate())} · ${days[d.getDay()]} (DOTW ${d.getDay()})`;
+  const r1=(d.getFullYear()<<12)|((d.getMonth()+1)<<8)|d.getDate(), r0=(d.getDay()<<24)|(d.getHours()<<16)|(d.getMinutes()<<8)|d.getSeconds();
+  $('#r-1',root).textContent=hex(r1,8)+'  YEAR·MONTH·DAY'; $('#r-0',root).textContent=hex(r0,8)+'  DOTW·HOUR·MIN·SEC';
+ });
+},
+cases:[['Holter and event recorders','Cardiology','Every ECG episode a patient flags must carry a trustworthy time so the cardiologist can match it to symptoms in the diary.'],['Smart pillbox','Elderly care','Alarm at 08:00 and 20:00, buzz with PWM, light the right compartment. The RTC alarm can wake a sleeping chip to save battery.'],['Data logger files','Research','Name each file by date (2026-10-14.csv) so a week of temperature or SpO₂ logs stays organised.']],
+code:{lang:'MicroPython',src:`from machine import RTC
+
+rtc = RTC()
+# (year, month, day, weekday, hour, min, sec, subsec)
+# MicroPython weekday: 0 = Monday
+rtc.datetime((2026, 10, 14, 2, 14, 30, 0, 0))
+
+y, mo, d, wd, h, mi, s, _ = rtc.datetime()
+print("%04d-%02d-%02d %02d:%02d:%02d" % (y, mo, d, h, mi, s))
+fname = "%04d-%02d-%02d.csv" % (y, mo, d)`},
+quiz:[['On a Pico, clk_rtc is normally',['12 MHz','46 875 Hz','32 768 Hz','1 Hz'],1,'12 MHz ÷ 256. Many other MCUs use a 32.768 kHz watch crystal; the RP2040 does not by default.'],['An alarm with only "second = 0" set fires',['Once ever','Every minute','Every hour','Every second'],1,'Hours and minutes are wildcards, so it matches at :00 of every minute.'],['Does the RP2040 RTC keep time with power removed?',['Yes','No — use an external battery-backed RTC such as DS3231','Only over USB','Only in dormant mode'],1,'There is no separate battery domain on the RP2040.']]
+});
+
+/* ---------- 8 WATCHDOG ---------- */
+M.push({id:'wdt', name:'Watchdog', full:'Watchdog timer with reset and scratch registers', tag:'The safety net for a frozen program',
+pins:'Internal block. MicroPython: <b>machine.WDT(timeout=ms)</b>, max 8 388 ms. Check <b>machine.reset_cause()</b> after boot.',
+dia:{blocks:[['code',20,40,150,60,'Main loop','does real work'],['feed',220,40,160,60,'watchdog.feed()','reload counter'],['hang',20,150,150,60,'Hang!','stuck loop or fault'],['ctr',220,150,160,60,'Down counter','24-bit, µs ticks'],['rst',430,150,150,60,'Chip reset','when it hits 0'],['lim',20,245,350,46,'Max ≈ 8.3 s','24-bit counter, erratum RP2040-E1'],['scratch',430,240,150,50,'Scratch registers','survive the reset']],
+ wires:[['w1','M170,70 L220,70'],['w2','M300,100 L300,150'],['w5','M170,180 L220,180'],['w3','M380,180 L430,180'],['w4','M505,210 L505,240']]},
+learn:[
+ {t:'A countdown you must keep resetting',b:'The watchdog is a counter that only counts down. Your main loop "feeds" it after finishing its work, which reloads the count. As long as the program is healthy, it never reaches zero.',show:['code','feed','ctr','w1','w2'],flow:['w1','w2'],key:['feed()','reloads the countdown']},
+ {t:'Silence means trouble',b:'If the code hangs — an infinite loop, a sensor that never answers, a crash — the feeding stops. The counter reaches zero and the watchdog resets the whole chip. The device recovers without anyone pressing a button.',show:['hang','rst','w5','w3'],flow:['w3'],key:['0','count that triggers a reset']},
+ {t:'Leave a note for your next life',b:'Eight scratch registers keep their values across a watchdog reset. Store what the code was doing; after reboot, read the reset reason and the note to log what went wrong.',show:['scratch','w4'],flow:['w3','w4'],key:['8 × 32 bit','scratch registers']},
+ {t:'Choose the timeout honestly',b:'The timeout must be longer than your slowest healthy loop, but short enough to be safe. The RP2040 counter ticks twice per microsecond due to an erratum, so the longest timeout is about 8.3 s. Feed only after real work completes, never from an independent timer interrupt.',show:['lim'],flow:['w1','w2'],key:['8 388 ms','maximum WDT timeout']}],
+sim(root,api){
+ root.innerHTML=`<div class="ctls">
+  <label class="ctl"><span>Timeout <b id="w-tv"></b></span><input type="range" id="w-t" min="200" max="8300" step="100" value="2000"></label>
+  <label class="ctl"><span>Healthy loop time <b id="w-lv"></b></span><input type="range" id="w-l" min="100" max="4000" step="100" value="600"></label>
+  <label class="chk"><input type="checkbox" id="w-h"> Simulate a hang (I²C sensor never answers)</label>
+  <button class="btn" id="w-f">Feed manually</button></div>
+ <div class="two"><div class="wdt-stage gadget" style="align-items:stretch;text-align:left">
+   <div style="display:flex;align-items:center;gap:14px"><svg viewBox="0 0 60 60" width="64"><circle cx="30" cy="30" r="22" fill="none" stroke="var(--line)" stroke-width="5"/><circle id="w-dot" cx="30" cy="8" r="6" fill="var(--accent)"/></svg>
+   <div><b id="w-state" style="color:var(--ink);font-size:15px">Running</b><div id="w-sub">loop feeds the dog each pass</div></div></div>
+   <div>Counter <b id="w-rem" class="mono" style="color:var(--ink)"></b></div><div class="meter" id="w-m"><b></b></div>
+   <div class="flash" id="w-flash">RESET</div></div>
+  <div class="readouts" style="align-content:start" id="w-ro"></div></div>
+ <div class="log" id="w-log"><div>Boot 1 · reset_cause = PWRON_RESET</div></div>`;
+ let rem=2000, acc=0, ang=0, resetting=false, boots=1, wdtResets=0, lastNote='—';
+ const logEl=$('#w-log',root), log=s=>{const d=document.createElement('div');d.innerHTML=s;logEl.prepend(d);};
+ const T=()=>+$('#w-t',root).value, Lp=()=>+$('#w-l',root).value;
+ const feed=()=>{rem=T(); if(hasA) anime({targets:$('#w-m',root),scaleY:[1.5,1],duration:350,easing:'easeOutQuad'});};
+ $('#w-f',root).onclick=()=>{if(!resetting)feed(); api.touched();};
+ $$('input',root).forEach(e=>e.addEventListener('input',()=>{api.touched(); if(e.id==='w-t') rem=Math.min(rem,T());}));
+ api.loop(dt=>{
+  $('#w-tv',root).textContent=T()+' ms'; $('#w-lv',root).textContent=Lp()+' ms';
+  const hung=$('#w-h',root).checked;
+  if(!resetting){
+   rem-=dt; if(!hung){ acc+=dt; ang+=dt/Lp()*360; if(acc>=Lp()){acc=0; feed(); lastNote='loop ok';} } else lastNote='waiting on I2C 0x57';
+   if(rem<=0){ resetting=true; wdtResets++; const fl=$('#w-flash',root);
+    log(`<b>Watchdog fired</b> after ${T()} ms with no feed. scratch[0] = "${lastNote}"`);
+    if(hasG) gsap.fromTo(fl,{opacity:.95},{opacity:0,duration:1.1,ease:'power2.out'});
+    setTimeout(()=>{resetting=false; boots++; rem=T(); acc=0; $('#w-h',root).checked=false; log(`Boot ${boots} · reset_cause = <b>WDT_RESET</b> · read scratch[0] → "${lastNote}"`);},1200); }
+  }
+  const a=(ang-90)*Math.PI/180; const dot=$('#w-dot',root); dot.setAttribute('cx',30+22*Math.cos(a)); dot.setAttribute('cy',30+22*Math.sin(a)); dot.style.fill=hung||resetting?css('--danger'):css('--accent');
+  const fr=Math.max(0,rem)/T(); const m=$('#w-m',root); m.querySelector('b').style.width=(fr*100)+'%'; m.className='meter'+(fr<.25?' low':'');
+  $('#w-rem',root).textContent=Math.max(0,rem).toFixed(0)+' ms';
+  $('#w-state',root).textContent=resetting?'Rebooting':hung?'Hung':'Running';
+  $('#w-sub',root).textContent=resetting?'chip held in reset':hung?'loop stuck — nobody is feeding':(Lp()>T()?'loop slower than timeout: will reset!':'loop feeds the dog each pass');
+  $('#w-ro',root).innerHTML=ro([['Boots',boots],['Watchdog resets',wdtResets],['Margin',(T()-Lp())+' ms'],['Load value',hex(T()*1000*2,6)]]);
+ });
+},
+cases:[['Ventilator controller','Life support','If the control loop freezes mid-breath, the watchdog resets it within a fraction of a second and the restart path raises an alarm instead of silently stopping.'],['Remote environment monitor','Cold chain','A vaccine fridge logger in a rural PHC recovers from an I²C bus lock-up on its own, with no technician on site.'],['Crash forensics','Quality','Log reset_cause and a scratch note on every boot. Ten WDT resets a week tells you where the bug is before a patient notices.']],
+code:{lang:'MicroPython',src:`import machine, time
+from machine import WDT
+
+if machine.reset_cause() == machine.WDT_RESET:
+    print("Recovered from a watchdog reset")
+
+wdt = WDT(timeout=2000)          # ms, max 8388
+
+while True:
+    read_sensors()               # may hang on a bad bus
+    update_display()
+    wdt.feed()                   # only after real work is done
+    time.sleep_ms(100)`},
+quiz:[['What should feed the watchdog?',['An independent timer interrupt that always runs','The main loop, after it completes its real work','Only the bootloader','The USB host'],1,'A timer ISR keeps firing even when the main loop is stuck, so it would hide exactly the hang you want to catch.'],['The maximum RP2040 watchdog timeout is about',['1 s','8.3 s','60 s','Unlimited'],1,'A 24-bit counter that decrements twice per µs (erratum RP2040-E1): 0xFFFFFF ÷ 2 µs ≈ 8.39 s.'],['After a watchdog reset, firmware can tell it happened by',['It cannot','Reading the reset reason and scratch registers','Reading the ADC','Counting USB packets'],1,'machine.reset_cause() in MicroPython, watchdog_caused_reboot() in the C SDK.']]
+});
+
+/* ---------- 9 SSI ---------- */
+M.push({id:'ssi', name:'SSI · XIP', full:'Synchronous Serial Interface for execute-in-place flash', tag:'Where your program actually lives',
+pins:'Dedicated QSPI pins: <b>QSPI_SCLK, QSPI_SS, QSPI_SD0–SD3</b>, wired to the 2 MB W25Q16JV on a Pico. Not available as GPIO.',
+dia:{blocks:[['cpu',20,40,130,60,'Cortex-M0+','fetches code'],['cache',190,40,150,60,'XIP cache','16 KB, 2-way'],['ssi',380,40,150,60,'SSI','DW_apb_ssi'],['map',20,170,180,60,'0x1000_0000','flash looks like memory'],['boot',210,200,150,60,'boot2','256 B sets QSPI mode'],['flash',380,200,150,70,'QSPI flash','W25Q16 · 2 MB']],
+ wires:[['w1','M150,70 L190,70'],['w2','M340,70 L380,70'],['q0','M410,100 L410,200','IO0',413,160],['q1','M435,100 L435,200','IO1',438,130],['q2','M460,100 L460,200','IO2',463,160],['q3','M485,100 L485,200','IO3',488,130]]},
+learn:[
+ {t:'The chip has no flash inside',b:'The RP2040 holds only 264 KB of SRAM. Your firmware sits in an external flash chip. Execute-in-place (XIP) maps that chip to address 0x1000_0000 so the CPU fetches instructions from it as if it were memory.',show:['cpu','map','flash'],flow:[],key:['0x1000_0000','XIP flash base address']},
+ {t:'SSI talks to the flash',b:'The SSI block (Synopsys DW_apb_ssi) turns each fetch into a flash read command: 8 bits of command, 24 bits of address, then data. In plain single mode, all of it crawls over one data line.',show:['ssi','w2','q0'],flow:['w2','q0'],key:['1 bit / clock','single SPI mode']},
+ {t:'Quad mode: four lines at once',b:'With command 0xEB the address and data travel on four lines, IO0 to IO3. In continuous mode the command byte is even skipped after the first read. The tiny boot2 program in the first 256 bytes of flash sets this up at power-on.',show:['q1','q2','q3','boot'],flow:['q0','q1','q2','q3'],key:['4 bits / clock','quad I/O read (0xEB)']},
+ {t:'The cache hides the wait',b:'Even quad flash is slow compared to the CPU. A 16 KB cache keeps recently used 8-byte lines on chip. Loops run from cache at full speed; a jump to cold code waits for flash. Time-critical interrupt code is placed in SRAM to avoid that wait.',show:['cache','w1'],flow:['w1','w2'],key:['16 KB','XIP cache']}],
+sim(root,api){
+ root.innerHTML=`<div class="ctls">
+  <label class="ctl"><span>Read mode</span><select id="x-m"><option value="1">Single · 0x03</option><option value="2">Dual I/O · 0xBB</option><option value="4" selected>Quad I/O · 0xEB</option></select></label>
+  <label class="ctl"><span>Flash address (hex)</span><input type="text" id="x-a" value="000100" maxlength="6"></label>
+  <label class="ctl"><span>Bytes</span><select id="x-n"><option>2</option><option selected>4</option><option>8</option></select></label>
+  <label class="chk"><input type="checkbox" id="x-c"> Continuous mode (skip command)</label>
+  <button class="btn" id="x-play">Replay</button></div>
+ <div class="la" id="x-la"></div><div class="readouts" id="x-ro"></div>
+ <h4 style="margin-top:18px">XIP cache</h4><p class="hint">Each square is a cache line slot. Green = hit, copper = miss that had to wait for flash.</p>
+ <div class="cache" id="x-cache">${'<i></i>'.repeat(64)}</div>
+ <div class="ctls"><button class="btn" id="x-loop">Run a tight loop</button><button class="btn" id="x-jump">Jump around 1 MB</button><button class="btn" id="x-flush">Flush cache</button></div>
+ <div class="readouts" id="x-cro"></div>`;
+ const la=mkLA($('#x-la',root)), msg='RP2040 XIP flash ';
+ const fb=a=>msg.charCodeAt(a%msg.length);
+ let missNs=0;
+ function seqClocks(mode,cont,n){ if(mode===1) return 8+24+8*n; if(mode===2) return (cont?0:8)+16+4*n; return (cont?0:8)+8+4+2*n; }
+ function build(){
+  const mode=+$('#x-m',root).value, a=parseHex($('#x-a',root).value,0x100)&0xFFFFFF, n=+$('#x-n',root).value; let cont=$('#x-c',root).checked; if(mode===1){cont=false;}
+  $('#x-c',root).disabled=mode===1;
+  const cs=[],sck=[],io=[[],[],[],[]],ph=[],db=[];
+  const clk=(l)=>{for(let h=0;h<2;h++){cs.push(0);sck.push(h);for(let k=0;k<4;k++)io[k].push(l[k]);}};
+  const idle=()=>{cs.push(1);sck.push(0);io[0].push(null);io[1].push(null);io[2].push(1);io[3].push(1);};
+  idle();idle();
+  const sendBits=(val,nb,lines,hiIdle)=>{for(let i=nb-lines;i>=0;i-=lines){const l=[null,null,hiIdle?1:null,hiIdle?1:null]; for(let k=0;k<lines;k++) l[k]=(val>>(i+k))&1; clk(l);}};
+  const cmd=mode===1?0x03:mode===2?0xBB:0xEB; let t;
+  if(!cont){t=cs.length; sendBits(cmd,8,1,true); ph.push({t0:t,t1:cs.length,text:'CMD '+hex(cmd),color:'--sig4'});}
+  t=cs.length;
+  if(mode===1){sendBits(a,24,1,true); ph.push({t0:t,t1:cs.length,text:'ADDR '+hex(a,6)});}
+  else { const mb=mode===2?0x20:0xA0; sendBits(a,24,mode,mode===2); ph.push({t0:t,t1:cs.length,text:'ADDR '+hex(a,6)}); t=cs.length; sendBits(mb,8,mode,mode===2); ph.push({t0:t,t1:cs.length,text:'M '+hex(mb),color:'--sig2'}); }
+  if(mode===4){t=cs.length; for(let i=0;i<4;i++) clk([null,null,null,null]); ph.push({t0:t,t1:cs.length,text:'DUMMY',color:'--muted'});}
+  t=cs.length;
+  for(let b=0;b<n;b++){const v=fb(a+b), tb=cs.length; if(mode===1){for(let i=7;i>=0;i--) clk([null,(v>>i)&1,1,1]);} else sendBits(v,8,mode,mode===2); const c=String.fromCharCode(v); db.push({t0:tb,t1:cs.length,text:(c===' '?'␠':c)+' '+hex(v),color:'--sig3'});}
+  ph.push({t0:t,t1:cs.length,text:'DATA',color:'--sig3'});
+  idle();idle();
+  la.play({units:cs.length,px:mode===1?7:12,rows:[{name:'CS',type:'d',vals:cs,color:'--sig4'},{name:'SCLK',type:'d',vals:sck,color:'--sig2'},{name:'IO0',type:'d',vals:io[0]},{name:'IO1',type:'d',vals:io[1]},{name:'IO2',type:'d',vals:io[2]},{name:'IO3',type:'d',vals:io[3]},{name:'phase',type:'bus',items:ph},{name:'bytes',type:'bus',items:db}]});
+  const clks=seqClocks(mode,cont,n), fck=62.5e6; missNs=seqClocks(mode,cont||mode!==1,8)/fck*1e9;
+  $('#x-ro',root).innerHTML=ro([['SSI clock','62.5 MHz'],['Clocks for this read',clks],['Read time',fmtT(clks/fck)],['Streaming rate',(mode*fck/8/1e6).toFixed(2)+' MB/s'],['Cache-miss cost',missNs.toFixed(0)+' ns']]);
+  cstats();
+ }
+ ['#x-m','#x-a','#x-n','#x-c'].forEach(s=>$(s,root).addEventListener('input',()=>{build();api.touched();}));
+ $('#x-play',root).onclick=()=>{build();api.touched();};
+ const cache=new Set(), order=[]; let hits=0, miss=0; const cells=$$('#x-cache i',root);
+ function fetch(addr){const line=addr>>>3; const slot=cells[line%64]; let h=cache.has(line); if(h)hits++; else {miss++; cache.add(line); order.push(line); if(order.length>2048) cache.delete(order.shift());} slot.className=h?'h':'m'; }
+ function cstats(){const n=hits+miss; const avg=n?(hits*8+miss*missNs)/n:0; $('#x-cro',root).innerHTML=ro([['Fetches',n],['Hits',hits],['Misses',miss],['Hit rate',n?(hits/n*100).toFixed(1)+'%':'—'],['Avg fetch',n?avg.toFixed(0)+' ns':'—']]);}
+ let job=null;
+ function run(gen,count){api.touched(); if(job)cancelAnimationFrame(job); let i=0; const step=()=>{for(let k=0;k<12&&i<count;k++,i++) fetch(gen(i)); cstats(); if(hasA) anime({targets:cells.filter((_,j)=>j%7===i%7),scale:[1.15,1],duration:300,easing:'easeOutQuad'}); if(i<count) job=requestAnimationFrame(step);}; step();}
+ $('#x-loop',root).onclick=()=>run(i=>0x1000+(i%16)*4,400);
+ $('#x-jump',root).onclick=()=>run(()=>Math.floor(Math.random()*0x100000)&~3,400);
+ $('#x-flush',root).onclick=()=>{cache.clear();order.length=0;hits=0;miss=0;cells.forEach(c=>c.className='');cstats();api.touched();};
+ build();
+},
+cases:[['Every Pico program','Fundamentals','Whether MicroPython or C, your code runs from the W25Q16 flash through XIP. Understanding this explains the BOOTSEL button and boot2.'],['Large lookup tables','Signal processing','Store an ECG template, a filter coefficient table or a bitmap as const data in flash and read it like an ordinary array.'],['Time-critical interrupts','Real-time sampling','Mark a sampling ISR with __not_in_flash_func so it runs from SRAM. A cache miss can cost half a microsecond of jitter.']],
+code:{lang:'C · Pico SDK',src:`#include "pico/stdlib.h"
+#include "hardware/flash.h"
+
+// Lives in flash, read through XIP like any array
+static const int16_t ecg_template[256] = { /* ... */ };
+
+// Copied to SRAM at boot: no XIP cache-miss stalls
+void __not_in_flash_func(adc_isr)(void) {
+    // read FIFO, push into ring buffer
+}
+
+int main(void) {
+    const uint8_t *p = (const uint8_t *)(XIP_BASE + 0x100000);
+    printf("byte at 1 MB: %02x\\n", p[0]);
+}`},
+quiz:[['By default, Pico code executes from',['Internal flash inside the RP2040','External QSPI flash through XIP','The ADC FIFO','USB RAM'],1,'The RP2040 has no internal flash; XIP maps the external chip into the address space.'],['Quad I/O mode moves how many bits per clock?',['1','2','4','8'],2,'IO0–IO3 all carry data, four bits each clock edge sequence.'],['What softens flash latency for loops?',['The watchdog','The 16 KB XIP cache','The RTC','Pull-up resistors'],1,'Hot code stays in cache; only cold jumps pay the flash read cost.']]
+});
+
+/* ---------- 10 USB ---------- */
+M.push({id:'usb', name:'USB', full:'USB 1.1 full-speed controller, device or host', tag:'The most layered conversation on the chip',
+pins:'Dedicated <b>USB_DP / USB_DM</b> pins to the micro-USB socket. clk_usb must be exactly 48 MHz from PLL_USB.',
+dia:{blocks:[['pu',250,8,110,40,'1.5 kΩ on D+','says "full-speed"'],['host',20,60,150,180,'Host PC','enumerates you'],['pico',430,60,150,180,'RP2040','USB device'],['desc',180,245,140,46,'Descriptors','VID 0x2E8A …'],['ep',340,245,140,46,'Endpoints','EP0 control + 15']],
+ wires:[['dp','M170,110 L430,110','D+',180,104],['dm','M170,150 L430,150','D−',180,144],['vbus','M170,200 L430,200','VBUS 5 V',180,194],['pu1','M305,48 L305,110']]},
+learn:[
+ {t:'A differential pair',b:'USB data travels on D+ and D− as opposite signals, which cancels noise picked up on the cable. VBUS brings 5 V from the host. The RP2040 talks at full speed: 12 Mbit/s.',show:['host','pico','dp','dm','vbus'],flow:['dp','dm'],key:['12 Mbit/s','USB 1.1 full speed']},
+ {t:'Saying hello',b:'When plugged in, the device connects a 1.5 kΩ pull-up on D+. The host notices the line rise, knows a full-speed device arrived, and holds both lines low (bus reset) to start fresh.',show:['pu','pu1'],flow:['pu1','dp'],key:['1.5 kΩ','pull-up on D+ for full speed']},
+ {t:'Enumeration: who are you?',b:'Before any data, the host asks for descriptors: who made you (VID), what are you (class: serial, keyboard, drive), what endpoints you have. It then assigns a 7-bit address and picks a configuration.',show:['desc'],flow:['dp','dm'],key:['0x2E8A','Raspberry Pi USB vendor ID']},
+ {t:'Endpoints carry the data',b:'Endpoint 0 handles control requests. Other endpoints stream data: bulk for files and serial, interrupt for keyboards and sensors, isochronous for audio. On the wire, bits use NRZI with bit-stuffing so the clock can be recovered.',show:['ep'],flow:['dp','dm','vbus'],key:['NRZI','0 = transition, 1 = hold']}],
+sim(root,api){
+ root.innerHTML=`<div class="ctls"><label class="ctl"><span>Device class</span><select id="b-c"><option value="cdc">CDC · virtual serial port</option><option value="hid">HID · keyboard or sensor</option><option value="msc">MSC · USB drive</option></select></label>
+  <button class="btn pri" id="b-n">Next step</button><button class="btn" id="b-auto">Play all</button><button class="btn" id="b-r">Unplug</button></div>
+ <div class="two"><ol class="steps-ol" id="b-st"></ol><div><table class="desc" id="b-d"></table><div class="log" id="b-log" style="margin-top:12px;height:170px"></div></div></div>
+ <h4>On the wire: NRZI with bit stuffing</h4>
+ <div class="ctls"><label class="ctl"><span>Packet ID</span><select id="b-pid"><option value="45">SETUP 0x2D</option><option value="195" selected>DATA0 0xC3</option><option value="105">IN 0x69</option><option value="210">ACK 0xD2</option></select></label>
+  <label class="ctl"><span>Data byte (hex)</span><input type="text" id="b-byte" value="FF" maxlength="2"></label></div>
+ <div class="la" id="b-la"></div><p class="hint" id="b-h"></p>`;
+ const P={cdc:{cls:'0x02 CDC',pid:'0x000A',ifs:'2 interfaces: control + data',eps:'EP1 IN (notify) · EP2 IN/OUT bulk',done:'A COM port appears. Bulk endpoints carry your print() output.'},
+  hid:{cls:'0x00 (per interface)',pid:'0x4001 (example)',ifs:'1 interface: HID',eps:'EP1 IN interrupt, every 10 ms',done:'The OS loads its built-in HID driver. No install needed.'},
+  msc:{cls:'0x00 (per interface)',pid:'0x0003 (BOOTSEL)',ifs:'1 interface: Mass Storage, SCSI',eps:'EP1 IN/OUT bulk',done:'A drive appears. This is exactly what BOOTSEL mode does for UF2 files.'}};
+ const steps=[
+  ['Attach','D+ pulled up via 1.5 kΩ → host detects a full-speed device'],
+  ['Bus reset','Host drives SE0 (both lines low) for ≥ 10 ms'],
+  ['GET_DESCRIPTOR (device)','SETUP 80 06 00 01 00 00 40 00 → device returns 18 bytes'],
+  ['SET_ADDRESS (5)','SETUP 00 05 05 00 00 00 00 00 → device answers at address 5 from now on'],
+  ['GET_DESCRIPTOR (config)','Interfaces, endpoints and class details'],
+  ['SET_CONFIGURATION (1)','Device is configured and endpoints go live'],
+  ['Ready','Class driver binds']];
+ let i=-1, auto=null; const logEl=$('#b-log',root), log=s=>{const d=document.createElement('div');d.innerHTML=s;logEl.prepend(d);};
+ function render(){const c=P[$('#b-c',root).value];
+  $('#b-st',root).innerHTML=steps.map((s,k)=>`<li class="${k===i?'on':k<i?'done':''}"><b>${k+1}</b>${s[0]}<div style="font-size:12.5px;color:var(--muted)">${k===6?c.done:s[1]}</div></li>`).join('');
+  const addr=i>=3?'5':'0';
+  $('#b-d',root).innerHTML=`<tr><td>State</td><td>${i<0?'Unplugged':i<2?'Powered':i<3?'Default':i<5?'Addressed':'Configured'}</td></tr><tr><td>Address</td><td>${addr}</td></tr><tr><td>idVendor</td><td>${i>=2?'0x2E8A Raspberry Pi':'?'}</td></tr><tr><td>idProduct</td><td>${i>=2?c.pid:'?'}</td></tr><tr><td>bDeviceClass</td><td>${i>=2?c.cls:'?'}</td></tr><tr><td>Interfaces</td><td>${i>=4?c.ifs:'?'}</td></tr><tr><td>Endpoints</td><td>${i>=4?c.eps:'EP0 only'}</td></tr>`;
+  const cur=$('#b-st li.on',root); if(cur&&hasA) anime({targets:cur,translateX:[-8,0],opacity:[.4,1],duration:450,easing:'easeOutQuad'});
+ }
+ function next(){ if(i>=6) return; i++; log(`<b>${steps[i][0]}</b> — ${i===6?P[$('#b-c',root).value].done:steps[i][1]}`); render(); api.touched(); if(i===6&&auto){clearInterval(auto);auto=null;} }
+ $('#b-n',root).onclick=next;
+ $('#b-auto',root).onclick=()=>{ if(auto)return; if(i>=6){i=-1;logEl.innerHTML='';} auto=setInterval(next,900); next(); };
+ $('#b-r',root).onclick=()=>{ if(auto){clearInterval(auto);auto=null;} i=-1; logEl.innerHTML='<div>Unplugged. Press Next step to attach.</div>'; render(); };
+ $('#b-c',root).oninput=()=>{render();api.touched();};
+ api.cleanup(()=>{if(auto)clearInterval(auto);});
+ render(); log('Unplugged. Press Next step to attach.');
+ const la=mkLA($('#b-la',root));
+ function wire(){
+  const pid=+$('#b-pid',root).value, by=parseHex($('#b-byte',root).value,0xff)&255, hasData=pid===195;
+  const fields=[['SYNC',0x80],['PID',pid]]; if(hasData) fields.push(['DATA',by]);
+  const dp=[],dm=[],bl=[],fl=[]; let lvl=1, ones=0, stuffed=0;
+  const put=(p,m)=>{dp.push(p);dm.push(m);};
+  put(1,0);put(1,0);
+  for(const [nm,v] of fields){const t0=dp.length;
+   for(let b=0;b<8;b++){const bit=(v>>b)&1; if(bit===0) lvl^=1; ones=bit?ones+1:0; bl.push({t0:dp.length,t1:dp.length+1,text:String(bit)}); put(lvl,lvl^1);
+    if(ones===6){lvl^=1; ones=0; stuffed++; bl.push({t0:dp.length,t1:dp.length+1,text:'s',color:'--danger'}); put(lvl,lvl^1);} }
+   fl.push({t0,t1:dp.length,text:nm+' '+hex(v),color:nm==='SYNC'?'--sig4':nm==='PID'?'--sig2':'--sig3'}); }
+  const te=dp.length; put(0,0);put(0,0); put(1,0); fl.push({t0:te,t1:te+2,text:'EOP',color:'--muted'}); put(1,0);
+  la.play({units:dp.length,px:16,rows:[{name:'D+',type:'d',vals:dp,color:'--sig1'},{name:'D−',type:'d',vals:dm,color:'--sig3'},{name:'bit',type:'bus',items:bl,color:'--sig2'},{name:'field',type:'bus',items:fl}]});
+  $('#b-h',root).textContent=stuffed?`${stuffed} stuffed bit(s) (red "s"): after six 1s in a row the sender forces a transition so the receiver's clock stays locked. The receiver silently removes them.`:'Each 0 flips the lines, each 1 holds them. Choose DATA0 with byte FF to see bit stuffing.';
+ }
+ ['#b-pid','#b-byte'].forEach(s=>$(s,root).addEventListener('input',()=>{wire();api.touched();})); wire();
+},
+cases:[['Streaming biosignals to a PC','Research','CDC serial at full speed carries multi-channel EEG or EMG to Python for live plotting, no extra USB-UART chip needed.'],['Hands-free foot pedal','Clinical labs','As a HID keyboard, a Pico sends a key press when a surgeon or lab tech taps a pedal. Works on any computer without drivers.'],['UF2 drag-and-drop','Every Pico','Hold BOOTSEL and the ROM enumerates as a mass-storage drive. Copying a .uf2 file writes your firmware to flash.']],
+code:{lang:'MicroPython',src:`# MicroPython's REPL is already a USB CDC device (VID 0x2E8A)
+import sys, time
+from machine import ADC
+
+ecg = ADC(26)
+while True:
+    sys.stdout.write("%d\\n" % (ecg.read_u16() >> 4))
+    time.sleep_ms(2)              # ~500 samples/s
+
+# On the PC (Python + pyserial):
+#   import serial
+#   s = serial.Serial("COM5", 115200)   # baud is ignored by CDC
+#   print(s.readline())`},
+quiz:[['The RP2040 USB controller runs at',['Low speed, 1.5 Mbit/s','Full speed, 12 Mbit/s','High speed, 480 Mbit/s','SuperSpeed'],1,'USB 1.1 full speed, clocked from a 48 MHz clk_usb.'],['During enumeration the host assigns',['A baud rate','A 7-bit device address','The vendor ID','The crystal frequency'],1,'SET_ADDRESS gives the device a number from 1 to 127; until then it answers at address 0.'],['In NRZI encoding, a 0 bit is sent as',['A transition','No transition','SE0','A pull-up'],0,'0 flips J/K state, 1 holds it. Bit stuffing guarantees transitions in long runs of 1s.']]
+});
+
+/* ================= PLAIN-LANGUAGE LAYER ================= */
+const D = {
+timer:{nick:'The stopwatch',
+ one:'A counter that adds 1 every millionth of a second, so your program always knows exactly how much time has passed.',
+ story:'Picture a stopwatch that started the moment you plugged the Pico in and never stops. Want to know how long something took? Read it before and after, and subtract. Want something to happen later? Set an alarm on it, like a kitchen timer.',
+ learn:[
+  ['A stopwatch that never stops','Inside the chip, a steady beat ticks once every microsecond (one millionth of a second). Each tick adds 1 to a counter. If the counter says 5 000 000, five seconds have passed since power-on.','1 tick = 1 µs','a million ticks make one second'],
+  ['So big it never runs out','The counter is 64 bits long, a number so huge it would take over half a million years to fill. It never rolls back to zero while you are alive. The chip keeps it in two halves; read the lower half first so both halves belong to the same moment.','584 942 years','before the counter fills up'],
+  ['Kitchen timers built in','You can set up to 4 alarms. Each one says “when the counter reaches this number, tap me on the shoulder.” That tap is called an interrupt. While waiting, the processor is free to do other jobs or rest.','4 alarms','ALARM0 to ALARM3'],
+  ['A perfectly steady beat','To read a heart signal 500 times a second, set an alarm 2 000 µs ahead, and each time it rings, set the next one. A loop with time.sleep() slowly drifts, like a clock that runs slow. The hardware timer does not drift.','2 000 µs','gap between samples for 500 per second']],
+ jargon:[['Microsecond (µs)','One millionth of a second.'],['Counter','A number that goes up by 1 on every tick.'],['Alarm','A target number. When the counter reaches it, the timer alerts the processor.'],['Interrupt','A tap on the processor’s shoulder: stop, handle this, then carry on.'],['Periodic','Repeating at a fixed gap, like a metronome.']],
+ tries:['Arm ALARM0 with a 1500 ms delay. Watch its diamond slide to the “now” line and fire.','Arm all four alarms with different delays. Predict which fires first, then check.','Press “Jump to 3 s before TIMELR wraps”. Watch the upper half (TIMEHR) go up by one when the lower half rolls over.'],
+ mistakes:['Using time.sleep() to sample a signal. The gaps slowly drift.','Doing long work inside the alarm handler. Keep it short: grab the data and leave.','Subtracting tick values directly in MicroPython. Use time.ticks_diff(), which handles roll-over.'],
+ quiz:[['The timer adds 1 to its counter every…',['nanosecond','microsecond','millisecond','second'],1,'One tick per microsecond, so a million ticks per second.'],['How many alarms can the timer hold at once?',['1','2','4','10'],2,'Four: ALARM0, ALARM1, ALARM2 and ALARM3.'],['You must read an ECG exactly 500 times per second. Best choice?',['time.sleep(0.002) in a loop','A hardware timer firing every 2 ms','Read as fast as possible','The RTC'],1,'The hardware timer keeps a perfect beat. sleep() drifts because the rest of the loop also takes time.']]},
+
+pwm:{nick:'The super-fast light switch',
+ one:'Flicks a pin on and off very fast. How long it stays on in each flick decides how bright, how fast or how far something goes.',
+ story:'Flick a room light on and off 1 000 times a second. Your eyes cannot see the flicker; they just see a dimmer room. Keep it on for 30% of each flick and the room looks about 30% bright. That is PWM: faking an in-between level using only ON and OFF.',
+ learn:[
+  ['Pins only know ON and OFF','A GPIO pin gives 3.3 V (on) or 0 V (off), nothing in between. But a lot of things need “a bit”: half brightness, slow motor speed. Inside the PWM block a counter climbs from 0 to a top value called TOP, then starts again. One climb is one cycle.','frequency','how many cycles happen per second'],
+  ['The “on” share is the duty cycle','You choose a number called CC. While the counter is below CC the pin is ON; above it, OFF. Put CC 30% of the way up and the pin is on for 30% of every cycle. That share is the duty cycle.','duty = on-time ÷ cycle time','30% duty ≈ 30% power'],
+  ['Things smooth it out','An LED, motor or heater is too slow to follow the flicks, so it acts as if it got the average. 30% of 3.3 V behaves like about 1 V. A servo motor is different: it measures how long each pulse lasts. 1 ms means one end, 2 ms means the other end.','1 to 2 ms','servo pulse, repeated every 20 ms'],
+  ['16 outputs, in pairs','The RP2040 has 8 PWM “slices”, each with 2 outputs (A and B), so 16 in all, and any GPIO can use one. The two outputs of a slice share the same speed but can have different duty cycles. The trade-off: the faster you switch, the fewer brightness steps you get.','8 × 2 = 16','PWM outputs']],
+ jargon:[['PWM','Pulse Width Modulation: changing how wide each ON pulse is.'],['Duty cycle','The percentage of time the pin is ON.'],['Frequency','How many on/off cycles happen per second, in hertz (Hz).'],['Period','Time for one cycle. 50 Hz gives 20 ms.'],['Servo','A motor that moves to an angle set by the pulse width.'],['Slice','One PWM unit inside the chip, with two outputs.']],
+ tries:['Slide duty from 0% to 100% and watch the LED brighten.','Press “Servo preset”, then move duty between 5% and 10%. The arm swings from 0° to 180°.','Push frequency above 20 kHz and look at “Resolution”. Why did it drop?'],
+ mistakes:['Driving a motor straight from a GPIO pin. Use a transistor or motor driver board.','Forgetting servos need 50 Hz. At 1 kHz they jitter or ignore you.','Expecting two pins on the same slice to run at different frequencies.'],
+ quiz:[['A pin that is ON for half of every cycle has a duty cycle of',['25%','50%','75%','100%'],1,'On half the time means 50%.'],['A servo expects a new pulse every…',['2 ms','20 ms','200 ms','2 s'],1,'50 times a second is once every 20 ms. The pulse inside is 1 to 2 ms long.'],['Why does an LED at 20% duty look dim instead of flickering?',['The LED is faulty','The switching is too fast for our eyes, so we see the average','PWM lowers the voltage','The LED is cold'],1,'Your eyes blend fast flicker into steady, dimmer light.']]},
+
+adc:{nick:'The voltage translator',
+ one:'Turns a real-world voltage from a sensor into a number between 0 and 4095 that your program can use.',
+ story:'Your program only understands numbers. Sensors speak in voltages. The ADC is a translator holding a ruler with 4 096 marks between 0 V and 3.3 V. It looks at the voltage, finds the nearest mark, and reports the mark number.',
+ learn:[
+  ['Choose which sensor to hear','There is one translator but five inputs: GP26, GP27, GP28, GP29 and a built-in temperature sensor. A selector switch, called a multiplexer, connects one of them at a time.','5 inputs','4 pins + 1 temperature sensor'],
+  ['Hold still, then measure','First the ADC grabs the voltage and holds it still, like taking a photo. Then it plays a guessing game: “Above half? Yes. Above three-quarters? No…” Twelve yes/no guesses give a 12-bit answer from 0 to 4095.','0.8 mV','size of one step (3.3 V ÷ 4096)'],
+  ['Very fast, so you can be fussy','It can measure 500 000 times per second. A heartbeat signal needs only a few hundred, so you can take extra readings and average them to remove noise.','500 000 per second','top speed'],
+  ['Measure often enough','Measure too slowly and a fast signal can trick you into seeing a slow one, like car wheels that seem to spin backwards in videos. The rule (Nyquist): measure more than twice as fast as the fastest change in the signal. In practice, aim for 5 to 10 times.','more than 2×','faster than the fastest part of the signal']],
+ jargon:[['ADC','Analog-to-Digital Converter: voltage in, number out.'],['Analog','Changing smoothly, like a dimmer knob.'],['Digital','Changing in fixed steps, like a staircase.'],['Resolution','How many marks the ruler has. 12-bit means 4 096.'],['Sample rate','How many measurements per second.'],['Aliasing','A fake slow signal caused by measuring too slowly.']],
+ tries:['Choose “Sine wave” at 10 Hz. Drop the sample rate below 20 Hz and watch a fake, slower wave appear.','Set resolution to 3 bits and look at the staircase.','Choose “Temperature sensor” and move the temperature. How much does the raw number change per degree?'],
+ mistakes:['Feeding more than 3.3 V into an ADC pin. It can damage the chip; use a voltage divider.','Forgetting MicroPython’s read_u16() gives 0–65535. Shift right by 4 for the 12-bit value.','Trusting a single reading. Average several.'],
+ quiz:[['With a 3.3 V reference, a reading of 2048 (out of 4095) means about',['0.8 V','1.65 V','2.5 V','3.3 V'],1,'2048 is half way up the ruler, so half of 3.3 V.'],['A signal changes up to 100 times a second. You must measure more than',['50 times/s','100 times/s','200 times/s','4096 times/s'],2,'More than twice the fastest change.'],['Which Pico pin can NOT be an ADC input?',['GP26','GP27','GP28','GP15'],3,'Only GP26 to GP29 reach the ADC.']]},
+
+uart:{nick:'The walkie-talkie pair',
+ one:'Sends bytes one bit at a time over a single wire, with both sides agreeing in advance on how fast to talk.',
+ story:'Two friends with walkie-talkies agree: “I will say one letter every second.” Nobody counts out loud; they just trust the agreed speed. If one talks faster than agreed, the other mishears. That agreed speed is the baud rate.',
+ learn:[
+  ['Two wires, crossed over','My mouth (TX) goes to your ear (RX), your mouth (TX) goes to my ear (RX). Add a shared ground wire so both agree what 0 V means. Both sides can talk at the same time.','TX → RX','always cross them'],
+  ['How one letter travels','When quiet, the line sits high. To send a byte it drops low for one bit (the start bit: “listen!”), sends 8 data bits smallest first, then goes high (the stop bit: “done”). That is 10 bits per letter.','10 bits','per letter in the usual 8N1 format'],
+  ['Agree on the speed','There is no clock wire, so both sides set the same baud rate, such as 9600 or 115200 bits per second. The receiver checks the middle of each bit. If the speeds differ by more than about 5%, it reads garbage: those strange symbols on a serial monitor.','115 200','bits per second, a common choice'],
+  ['Waiting rooms for bytes','Each side has a 32-byte waiting room (a FIFO). Your program drops several letters in and moves on; the UART sends them by itself. Incoming letters wait there until you read them.','32 bytes','in each waiting room']],
+ jargon:[['UART','Universal Asynchronous Receiver-Transmitter, the classic serial port.'],['TX / RX','Transmit (talk) and receive (listen).'],['Baud rate','Bits per second both sides agree on.'],['Start / stop bit','Markers at the start and end of each letter.'],['Parity','An optional extra bit for simple error checking.'],['FIFO','First-in, first-out waiting line.']],
+ tries:['Type your initials and watch each letter become a frame of bits.','Move “Receiver clock error” to 6% or more. The RX lane turns red: that is garbled text.','Switch format to 8E1 and find the extra P (parity) bit.'],
+ mistakes:['Connecting TX to TX. Nothing gets heard.','Forgetting the shared GND wire.','Different baud rates on each side: you get random symbols.','Wiring a 5 V module straight to 3.3 V pins.'],
+ quiz:[['The Pico’s TX pin connects to the module’s…',['TX','RX','GND','VBUS'],1,'Mouth to ear: TX goes to RX.'],['Your serial monitor shows symbols like ÿ⸮. The likely cause is',['Wrong baud rate','Not enough RAM','The LED is off','Wrong I²C address'],0,'Both sides must use the same speed.'],['When nothing is being sent, a UART line is',['Low','High','Flashing','Disconnected'],1,'It rests high. The drop to low (start bit) says a letter is coming.']]},
+
+i2c:{nick:'The classroom roll call',
+ one:'Two shared wires connect many sensors. The Pico calls out an address and only the sensor with that address answers.',
+ story:'A teacher (the Pico) and a class of students (sensors) share one room. The teacher calls a roll number: “Number 57!” Only student 57 answers “Present!”, which is the ACK. Everyone else stays quiet. If nobody answers, student 57 is not there.',
+ learn:[
+  ['Many sensors, two wires','SDA carries the data and SCL carries the clock, the beat. Every device hangs on the same two wires. The Pico is the controller and always starts the conversation.','2 wires','shared by over 100 possible devices'],
+  ['Nobody shouts “high”','Devices can only pull a wire down to 0 V, or let go. Small resistors called pull-ups gently pull the wires back up to 3.3 V. That way two devices can never fight. No pull-ups means a dead bus.','4.7 kΩ','usual pull-up resistor'],
+  ['Roll call and reply','The Pico signals START, then sends a 7-bit address and one bit saying read or write. On the 9th beat, the device with that address pulls SDA low: “Present!” (ACK). If the line stays high, nobody answered (NACK).','9 beats','address + read/write + reply'],
+  ['How fast?','Normal speed is 100 kHz, fast is 400 kHz and fast-plus is 1 MHz. Long wires make the edges sloppy, so slower is safer on long cables. Data only changes while SCL is low and is read while SCL is high.','400 kHz','common speed for sensors']],
+ jargon:[['I²C','Inter-Integrated Circuit, said “I-squared-C” or “I-two-C”.'],['SDA / SCL','Serial Data and Serial Clock.'],['Address','A device’s roll number, such as 0x57.'],['ACK / NACK','“Present!” or silence.'],['Pull-up resistor','Pulls a wire to 3.3 V whenever nobody pulls it down.'],['Controller / target','The one who asks and the one who answers.']],
+ tries:['Untick “Device present on bus”. Watch the 9th beat become a NACK.','Switch to Read and see who drives the data bits (orange in the bottom lane).','Compare transaction time at 100 kHz and 1 MHz.'],
+ mistakes:['No pull-up resistors (many modules include them; bare chips do not).','Swapping SDA and SCL.','Two devices with the same address on one bus.','OSError: [Errno 5] EIO usually means no ACK. Run i2c.scan() to check wiring and address.'],
+ quiz:[['A sensor stays silent on the 9th beat. The Pico sees',['ACK','NACK','START','STOP'],1,'Silence means no “Present!”, which is a NACK.'],['What do the pull-up resistors do?',['Pull the wires to 3.3 V when nobody pulls them low','Slow down the clock','Store the address','Protect against water'],0,'Devices only pull down; the resistors bring the line back up.'],['First thing to try when an I²C sensor does not respond?',['Buy a new Pico','Run i2c.scan() to list addresses that answer','Raise the baud rate','Turn on the watchdog'],1,'scan() shows every address that ACKs, so you learn whether wiring and address are right.']]},
+
+spi:{nick:'The tap-on-the-shoulder chat',
+ one:'A fast four-wire link. The Pico picks one device by pulling its select wire low, then swaps one bit with it on every clock beat.',
+ story:'Instead of calling roll numbers, the teacher walks up and taps one student on the shoulder (chip select). Then they pass notes in rhythm: on every clap (clock) the teacher passes one bit and the student passes one bit back, at the same moment.',
+ learn:[
+  ['Four wires, with their own beat','SCK is the clock, the clap. MOSI carries data from the Pico to the device, MISO from the device back to the Pico. CS chooses which device is listening. Because the clock travels with the data, nobody has to agree on a speed beforehand.','4 wires','SCK · MOSI · MISO · CS'],
+  ['A tap on the shoulder','There are no addresses. Pulling a device’s CS wire low says “you, listen”. Every other device ignores the bus. Three devices need three CS wires.','1 CS wire','per device'],
+  ['Swap a bit on every clap','Each side has a small 8-slot shelf called a shift register. On every clock beat one bit leaves and one bit arrives, on both sides. After 8 beats they have swapped a whole byte. You always receive while you send.','62.5 MHz','top SPI speed on the RP2040'],
+  ['Four dance styles (modes)','Devices differ on two details: does the clock rest low or high (CPOL)? Is data read on the first or second edge (CPHA)? That makes modes 0 to 3. The device datasheet tells you which; mode 0 is the most common.','mode = CPOL×2 + CPHA','0, 1, 2 or 3']],
+ jargon:[['SPI','Serial Peripheral Interface.'],['MOSI / MISO','Data out of the Pico / data into the Pico (called TX / RX in the Pico pinout).'],['CS','Chip Select. Low means “you are selected”.'],['Full duplex','Both directions at the same time.'],['Mode','Which clock shape and edge the device expects.']],
+ tries:['Step through modes 0 to 3. The clock shape changes but the copper dots stay mid-bit.','Set MOSI to FF and MISO to 00. Both bytes travel at the same time.','Compare byte time at 1 MHz and 62.5 MHz.'],
+ mistakes:['Wrong mode: values come back shifted or random.','Forgetting to raise CS after a transfer.','Swapping MOSI and MISO.'],
+ quiz:[['How does SPI choose which device listens?',['By address','By pulling that device’s CS wire low','By baud rate','By colour code'],1,'CS low means selected.'],['Why is SPI faster than I²C?',['The wires are actively driven both ways and there is no address phase','It uses fewer wires','It has a bigger FIFO','It runs over USB'],0,'Pins drive both high and low quickly; I²C waits for resistors to pull lines up.'],['SPI mode 0 means the clock rests…',['High, data read on the second edge','Low, data read on the first (rising) edge','High, data read on the first edge','There is no clock'],1,'CPOL 0 rests low; CPHA 0 reads on the first edge.']]},
+
+rtc:{nick:'The wall calendar clock',
+ one:'Keeps the date and the time of day (year, month, day, hours, minutes, seconds) and can ring an alarm at a chosen time.',
+ story:'The timer is a stopwatch: “how long since…?” The RTC is a wall clock with a calendar: “what date and time is it now?” Like a bedside alarm clock, you can tell it “wake me at 8:00 every day.”',
+ learn:[
+  ['Making exactly one second','The Pico’s 12 MHz crystal vibrates 12 million times a second. Divide that by 256 and count 46 875 of the result, and you get one tick per second. A normal crystal drifts a few seconds a day.','≈ 2–3 s per day','typical drift'],
+  ['A calendar in hardware','Every second it updates seconds, minutes, hours, day, month, year and weekday, leap years included. Your program just reads the values. No date maths needed.','7 fields','year · month · day · weekday · h · m · s'],
+  ['Alarms with “any”','Set only the fields you care about and leave the rest as “any”. Second = 0 with everything else on “any” rings once a minute. Hour 8, minute 0, second 0 rings at 8:00 every day.','“any”','a field that matches every value'],
+  ['No battery inside','When the alarm matches, the RTC taps the processor (an interrupt), even waking it from sleep. But the RP2040 RTC forgets the time when power is cut. For real devices, add a DS3231 battery clock module on I²C.','DS3231','popular battery-backed clock module']],
+ jargon:[['RTC','Real-Time Clock: date and time of day.'],['Crystal','A tiny vibrating part that keeps steady time.'],['Drift','How far a clock slowly wanders from true time.'],['Weekday (DOTW)','Day of the week stored as a number.'],['Wildcard','“Any value” in an alarm field.']],
+ tries:['Press “Daily 08:00 pill reminder” and wait 20 seconds for the alarm.','Untick “any” only for second and set it to 30. How often does the alarm ring?','Set speed to 60× and watch the RTC_0 register change.'],
+ mistakes:['Expecting the RP2040 RTC to keep time after unplugging.','Mixing up the timer (stopwatch) and the RTC (calendar clock).','Weekday numbering differs: MicroPython uses 0 = Monday.'],
+ quiz:[['Which block tells you today’s date?',['Timer','RTC','Watchdog','ADC'],1,'The RTC keeps the calendar.'],['An alarm with only “second = 0” set rings…',['Once ever','Every minute','Every hour','Every second'],1,'Every time the seconds reach 0.'],['You unplug the Pico for 5 minutes and plug it back. The RP2040 RTC…',['Shows the right time','Has lost the time','Is 5 minutes ahead','Rings the alarm'],1,'It has no battery. Add a DS3231 if time must survive.']]},
+
+wdt:{nick:'The guard dog',
+ one:'A countdown that restarts the chip if your program stops checking in, so a frozen device fixes itself.',
+ story:'You keep a guard dog that must be fed every 2 seconds. While you are fine, you feed it on time and it stays calm. If you faint and stop feeding it, it barks loudly and wakes everyone up: the chip restarts. Feeding means “I am still OK.”',
+ learn:[
+  ['A countdown you keep topping up','The watchdog counts down. Each time your main loop finishes its work, it “feeds” the dog, which refills the countdown. A healthy program never lets it reach zero.','feed()','refills the countdown'],
+  ['No food means restart','If your code freezes, stuck in a loop or waiting for a sensor that never answers, the feeding stops. The countdown reaches zero and the whole chip restarts. The device recovers without anyone pressing a button.','0','the value that triggers a restart'],
+  ['Leave yourself a note','A few special memory boxes, called scratch registers, keep their values through a watchdog restart. Write down what you were doing; after the restart, read the note and the reset reason to find the bug.','8 notes','scratch registers that survive a restart'],
+  ['Pick the right timeout','Make the timeout longer than your slowest normal loop, but short enough to be safe. On the RP2040 the maximum is about 8.3 seconds. Feed only after real work is done, never from a separate timer, or you will feed it even while the main code is stuck.','8.3 s','longest watchdog timeout']],
+ jargon:[['Watchdog (WDT)','A safety countdown that restarts a stuck chip.'],['Feed / kick','Refill the countdown, meaning “I am still alive”.'],['Timeout','How long the dog waits without food.'],['Reset cause','Why the chip last restarted.'],['Hang','A program that has stopped making progress.']],
+ tries:['Tick “Simulate a hang” and watch the meter drain to RESET.','Make the loop time longer than the timeout. What happens even without a hang?','After a restart, read the log: the reset cause and the scratch note.'],
+ mistakes:['Feeding the watchdog from a timer interrupt. It hides the very hang you want to catch.','A timeout shorter than your slowest normal loop: endless restarts.','Leaving the watchdog on while debugging and getting surprise restarts.'],
+ quiz:[['What happens if the program stops feeding the watchdog?',['Nothing','The chip restarts','The LED turns blue','USB stops forever'],1,'The countdown hits zero and the chip resets.'],['Where should wdt.feed() go?',['In a separate timer that always runs','At the end of the main loop, after the real work','Only once at start-up','Nowhere'],1,'Only a healthy loop should feed the dog.'],['The longest RP2040 watchdog timeout is about',['1 s','8.3 s','1 minute','1 hour'],1,'About 8.3 seconds.']]},
+
+ssi:{nick:'The window to the bookshelf',
+ one:'The link between the RP2040 and the flash chip that stores your program, so the processor can run code straight from that chip.',
+ story:'The RP2040 is a reader with a small desk (RAM) but no bookshelf. Your program lives in a big book next door: the flash chip. The SSI is a window between them. The reader asks for a page and the words come through. A small notepad, the cache, keeps recently read pages so re-reading them is instant.',
+ learn:[
+  ['Your program lives outside the chip','The RP2040 has nowhere inside to store programs. Your code sits in a separate 2 MB flash chip on the Pico board. Execute-in-place (XIP) makes that chip look like normal memory starting at address 0x1000_0000.','2 MB','flash chip on a standard Pico'],
+  ['Asking for a page','To read, the SSI sends a command (8 bits), an address (24 bits) and then receives the data. In simple mode all of it goes over one wire, one bit at a time. Slow.','1 bit per beat','single mode'],
+  ['Use four lanes','In quad mode four wires carry data at once, so it is about four times faster. A tiny 256-byte program called boot2, at the start of flash, switches this on at power-up.','4 bits per beat','quad mode'],
+  ['The notepad (cache)','Flash is still slower than the processor. A 16 KB cache keeps recently used code on the chip. Loops that run again and again are fast; jumping to new code means waiting. That is why time-critical code is sometimes copied into RAM.','16 KB','XIP cache']],
+ jargon:[['SSI','Synchronous Serial Interface: the link to the flash chip.'],['Flash','Memory that keeps data with the power off. It holds your program.'],['XIP','Execute-In-Place: running code straight from flash.'],['QSPI','Quad SPI: SPI with four data wires.'],['Cache','A small, fast copy of recently used data.'],['Hit / miss','Found in the cache (fast) or fetched from flash (slow).']],
+ tries:['Switch between Single, Dual and Quad. Count how many beats the read takes.','Press “Run a tight loop”. Nearly every fetch is a hit.','Press “Flush cache”, then “Jump around 1 MB”. Compare the average fetch time.'],
+ mistakes:['Thinking the RP2040 has internal flash. It does not.','Writing to flash while running from it without precautions. The program crashes.','Leaving a time-critical interrupt in flash and getting timing jitter.'],
+ quiz:[['Where does your Pico program normally live?',['Inside the RP2040','In the external flash chip','In the ADC','In the USB cable'],1,'In the 2 MB flash chip next to the RP2040.'],['Quad mode is faster because',['It uses four data wires at once','It uses a higher voltage','It skips the data','It uses the RTC'],0,'Four bits per beat instead of one.'],['A cache “hit” means',['The data was found in the fast notepad','The chip crashed','Flash was erased','USB connected'],0,'No need to wait for the flash chip.']]},
+
+usb:{nick:'The introduction at reception',
+ one:'Lets the Pico plug into a computer, introduce itself as a serial port, keyboard or drive, and then exchange data at 12 Mbit/s.',
+ story:'When you walk into an office, reception asks: “Who are you? Which company? Why are you here?” Then you get a visitor badge number. USB works the same way. The PC asks the Pico for its details, gives it an address number, and then lets it work.',
+ learn:[
+  ['A pair of opposite wires','USB sends data on two wires, D+ and D−, always opposite to each other. Noise hits both equally and cancels out. VBUS brings 5 V from the computer. The RP2040 runs at full speed: 12 million bits per second.','12 Mbit/s','USB full speed'],
+  ['Knock, knock','When plugged in, the Pico connects a resistor on D+. The computer notices the change and knows a full-speed device has arrived. It then resets the line to start fresh.','1.5 kΩ','resistor on D+ that says “I am here”'],
+  ['Who are you?','The computer asks for descriptors: the maker’s ID (Raspberry Pi is 0x2E8A), the product ID and what kind of device it is (serial port, keyboard, drive). Then it gives the device an address number and picks a setup. This is called enumeration.','0x2E8A','Raspberry Pi vendor ID'],
+  ['Doors for data','Endpoints are like numbered doors. Door 0 is always for control questions. Other doors carry data: bulk for files and serial, interrupt for keyboards and sensors, isochronous for audio. The bits are coded (NRZI with bit stuffing) so the receiver can keep its clock in step.','16 endpoints','door 0 plus up to 15 more']],
+ jargon:[['USB','Universal Serial Bus.'],['Host / device','The computer / the Pico.'],['Enumeration','The “who are you?” handshake after plugging in.'],['Descriptor','The device’s ID card.'],['CDC / HID / MSC','Serial port / keyboard-type device / USB drive.'],['Endpoint','A numbered data door.']],
+ tries:['Press “Play all” and follow the handshake step by step.','Switch the class to MSC. That is exactly what BOOTSEL mode does.','In the wire view, choose DATA0 with byte FF to see a stuffed bit (red “s”).'],
+ mistakes:['Using a charge-only cable: power but no data.','Expecting the baud rate to matter on USB serial. It is ignored.','Forgetting to hold BOOTSEL while plugging in to upload a .uf2 file.'],
+ quiz:[['The “who are you?” handshake after plugging in is called',['Enumeration','Aliasing','Parity','Bit stuffing'],0,'The host reads descriptors and assigns an address.'],['Hold BOOTSEL and plug in. The Pico appears as',['A keyboard','A USB drive','A mouse','A speaker'],1,'A mass-storage drive. Drag a .uf2 file onto it.'],['The RP2040 USB speed is',['1.5 Mbit/s','12 Mbit/s','480 Mbit/s','5 Gbit/s'],1,'USB full speed.']]}
+};
+M.forEach(m=>{const d=D[m.id]; m.nick=d.nick; m.one=d.one; m.story=d.story; m.jargon=d.jargon; m.tries=d.tries; m.mistakes=d.mistakes; m.quiz=d.quiz;
+ d.learn.forEach((s,i)=>{ m.learn[i]={...m.learn[i], t:s[0], b:s[1], key:[s[2],s[3]]}; }); });
+
+/* ================= APP ================= */
+const P = store.get('rp2040dummies', {}); M.forEach(m=>{P[m.id]=P[m.id]||{l:0,s:0,q:0}});
+let cur = store.get('rp2040dummies_cur','timer'), tab='learn', stepI=0, cleanups=[];
+const done=m=>P[m.id].l&&P[m.id].s&&P[m.id].q;
+function save(){store.set('rp2040dummies',P); updateProgress();}
+function mark(id,k){ if(!P[id][k]){P[id][k]=1; if(done(M.find(m=>m.id===id)) && !P._done) {} save(); renderRail(); if(M.every(done)&&!P._finished){P._finished=new Date().toISOString(); save(); renderLife(); celebrate();}} }
+
+function updateProgress(){const n=M.filter(done).length; $('#progTxt').textContent=n+' / 10 done'; $('#progBar').style.width=(n*10)+'%'; $$('.pad').forEach(p=>p.classList.toggle('done',done(M.find(m=>m.id===p.dataset.id))));}
+
+function renderRail(){
+ const r=$('#rail'); $$('.mbtn',r).forEach(e=>e.remove());
+ M.forEach((m,i)=>{const b=document.createElement('button'); b.className='mbtn'+(m.id===cur?' on':''); b.innerHTML=`<span class="n">${String(i+1).padStart(2,'0')}</span><span class="nm">${m.name}<small>${m.nick}</small></span><span class="dots" title="Understand · Play · Check yourself"><i class="${P[m.id].l?'y':''}"></i><i class="${P[m.id].s?'y':''}"></i><i class="${P[m.id].q?'y':''}"></i></span>`; b.onclick=()=>openMod(m.id,'learn'); r.appendChild(b);});
+}
+
+function openMod(id,t='learn',scroll=false){ cur=id; tab=t; stepI=0; store.set('rp2040dummies_cur',id); renderRail(); renderPanel(); if(scroll) $('#lab').scrollIntoView({behavior:RM?'auto':'smooth'}); }
+
+function renderPanel(){
+ cleanups.forEach(f=>f()); cleanups=[]; simLoop=null; clearFlows($('#pb'));
+ const m=M.find(x=>x.id===cur), i=M.indexOf(m);
+ $('#ph').innerHTML=`<div class="num">HELPER ${i+1} OF 10</div><h2>${m.name} <span>· ${m.nick.toLowerCase()}</span></h2><div class="full">${m.full}</div>`;
+ const tabs=[['learn','1 · Understand'],['sim','2 · Play'],['world','3 · Real life'],['code','4 · Code'],['quiz','5 · Check yourself']];
+ $('#tabs').innerHTML=tabs.map(([k,v])=>`<button class="tab${k===tab?' on':''}" role="tab" aria-selected="${k===tab}" data-t="${k}">${v}</button>`).join('');
+ $$('#tabs .tab').forEach(b=>b.onclick=()=>{tab=b.dataset.t; renderPanel();});
+ const pb=$('#pb'); pb.innerHTML='';
+ if(tab==='learn') renderLearn(m,pb);
+ if(tab==='sim'){ const api={touched:()=>mark(m.id,'s'),loop:f=>{simLoop=f;},cleanup:f=>cleanups.push(f)};
+   const tr=P[m.id].t||[];
+   pb.innerHTML=`<div class="tries"><div class="lbl try">Try this</div><ul>${m.tries.map((t,k)=>`<li><label><input type="checkbox" data-k="${k}" ${tr[k]?'checked':''}><span>${t}</span></label></li>`).join('')}</ul></div><div id="simroot"></div>`;
+   $$('.tries input',pb).forEach(c=>c.onchange=()=>{const a=P[m.id].t||[]; a[+c.dataset.k]=c.checked; P[m.id].t=a; save(); if(c.checked) mark(m.id,'s');});
+   m.sim($('#simroot',pb),api); const nx=document.createElement('div'); nx.style.marginTop='16px'; nx.innerHTML=`<button class="btn" id="toWorld">Next: where this is used in real life →</button>`; pb.appendChild(nx); $('#toWorld').onclick=()=>{tab='world';renderPanel();}; }
+ if(tab==='world'){ pb.innerHTML=`<div class="cases">${m.cases.map(c=>`<div class="case"><div class="tg">${c[1]}</div><h4>${c[0]}</h4><p>${c[2]}</p></div>`).join('')}</div><div class="pins"><b>Wire it:</b> ${m.pins}</div><div class="mist"><div class="lbl warn">Watch out: beginner mistakes</div><ul>${m.mistakes.map(x=>`<li>${x}</li>`).join('')}</ul></div>`; if(hasA) anime({targets:$$('.case',pb),translateY:[16,0],opacity:[.3,1],delay:anime.stagger(90),duration:500,easing:'easeOutQuad'}); }
+ if(tab==='code'){ const src=esc(m.code.src).replace(/(#.*$|\/\/.*$)/gm,'<span class="cm">$1</span>'); pb.innerHTML=`<div class="code"><div class="lang">${m.code.lang}<button class="cp" id="cpBtn">Copy</button></div><pre>${src}</pre></div><p class="hint" style="margin-top:12px">Paste into Thonny or a Wokwi Pico project and change one number at a time. Predict the result before you run it.</p>`;
+   $('#cpBtn').onclick=e=>{const b=e.target; navigator.clipboard.writeText(m.code.src).then(()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1500)}).catch(()=>{const r=document.createRange(); r.selectNodeContents($('pre',pb)); const s=getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent='Selected';});}; }
+ if(tab==='quiz') renderQuiz(m,pb);
+ if(hasG&&!RM) gsap.fromTo(pb,{opacity:.2,y:10},{opacity:1,y:0,duration:.4,ease:'power2.out'});
+}
+
+function renderLearn(m,pb){
+ const B=m.dia.blocks, W=m.dia.wires;
+ let svg=`<svg viewBox="0 0 600 300" role="img" aria-label="${m.name} block diagram">`;
+ W.forEach(([id,d,lab,lx,ly])=>{svg+=`<g class="el wire${id==='w5'&&m.id==='wdt'?' x':''}" data-id="${id}"><path id="p-${m.id}-${id}" d="${d}"/>${lab?`<text x="${lx}" y="${ly}">${lab}</text>`:''}</g>`;});
+ B.forEach(([id,x,y,w,h,l,s])=>{svg+=`<g class="el blk" data-id="${id}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="9"/><text class="bl" x="${x+w/2}" y="${y+h/2+(s?-3:4)}" text-anchor="middle">${esc(l)}</text>${s?`<text class="bs" x="${x+w/2}" y="${y+h/2+13}" text-anchor="middle">${esc(s)}</text>`:''}</g>`;});
+ svg+='</svg>';
+ pb.innerHTML=`<div class="bigidea"><p class="one"><small>In one line</small>${m.one}</p><div class="story"><div class="lbl pic">Picture this</div><p>${m.story}</p></div></div>
+  <div class="learn"><div class="dia">${svg}</div><div class="step" id="stepBox"></div></div>
+  <details class="jargon"><summary>Jargon buster · ${m.jargon.length} words in plain English</summary><dl>${m.jargon.map(j=>`<dt>${j[0]}</dt><dd>${j[1]}</dd>`).join('')}</dl></details>`;
+ const svgEl=$('svg',pb);
+ function go(n){
+  stepI=Math.max(0,Math.min(m.learn.length-1,n)); const s=m.learn[stepI];
+  const shown=new Set(); m.learn.slice(0,stepI+1).forEach(x=>x.show.forEach(id=>shown.add(id)));
+  $$('.el',svgEl).forEach(e=>{const id=e.dataset.id; e.classList.toggle('shown',shown.has(id)); e.classList.toggle('focus',s.show.includes(id)||s.flow.includes(id));});
+  clearFlows(svgEl); s.flow.forEach((id,k)=>{const p=$('#p-'+m.id+'-'+id,svgEl); if(p) addFlow(svgEl,p,2,1300+k*120);});
+  if(hasG&&!RM) gsap.fromTo($$('.blk.focus rect',svgEl),{scale:.94,transformOrigin:'50% 50%'},{scale:1,duration:.6,ease:'elastic.out(1,.5)'});
+  $('#stepBox').innerHTML=`<div class="eyebrow">Step ${stepI+1} of ${m.learn.length}</div><h3>${s.t}</h3><p>${s.b}</p><div class="lbl rem">Remember</div><div class="keyn"><b>${s.key[0]}</b><span>${s.key[1]}</span></div>
+   <div class="stepnav"><div class="pips">${m.learn.map((_,k)=>`<button aria-label="Step ${k+1}" class="${k<=stepI?'on':''}" data-k="${k}"></button>`).join('')}</div>
+   <button class="btn" id="prv" ${stepI===0?'disabled':''}>Back</button><button class="btn pri" id="nxt">${stepI===m.learn.length-1?'Now play with it →':'Next'}</button></div>`;
+  if(hasG&&!RM) gsap.from($$('#stepBox > *'),{opacity:0,y:12,stagger:.06,duration:.45,ease:'power2.out'});
+  $$('.pips button').forEach(b=>b.onclick=()=>go(+b.dataset.k));
+  $('#prv').onclick=()=>go(stepI-1);
+  $('#nxt').onclick=()=>{ if(stepI===m.learn.length-1){mark(m.id,'l'); tab='sim'; renderPanel();} else go(stepI+1); };
+  if(stepI===m.learn.length-1) mark(m.id,'l');
+ }
+ go(stepI);
+}
+
+function renderQuiz(m,pb){
+ const ans=new Array(m.quiz.length).fill(null);
+ pb.innerHTML=m.quiz.map((q,qi)=>`<div class="q" data-q="${qi}"><h4>${qi+1}. ${q[0]}</h4><div class="opts">${q[1].map((o,oi)=>`<button class="opt" data-o="${oi}">${o}</button>`).join('')}</div><p class="expl" hidden></p></div>`).join('')+`<div class="qres" id="qres"></div>`;
+ $$('.q',pb).forEach(qe=>{const qi=+qe.dataset.q, q=m.quiz[qi];
+  $$('.opt',qe).forEach(b=>b.onclick=()=>{ const oi=+b.dataset.o; $$('.opt',qe).forEach(x=>x.classList.remove('right','wrong'));
+   const ok=oi===q[2]; b.classList.add(ok?'right':'wrong'); if(ok) ans[qi]=true; else ans[qi]=ans[qi]||false;
+   const ex=$('.expl',qe); ex.hidden=false; ex.textContent=(ok?'Correct. ':'Not quite. Have another go. ')+(ok?q[3]:'');
+   if(hasA) anime({targets:b,scale:[ok?1.05:.97,1],translateX:ok?0:[{value:-6},{value:6},{value:0}],duration:400,easing:'easeOutQuad'});
+   const allOk=ans.every(a=>a===true);
+   $('#qres').innerHTML= allOk ? `All correct. ${done(m)||(P[m.id].l&&P[m.id].s)?'Helper complete. Its three dots are green.':'Finish Understand and Play to complete this helper.'}` : '';
+   if(allOk){ mark(m.id,'q'); const nx=M[M.indexOf(m)+1]; if(nx && !$('#nextMod')){ $('#qres').insertAdjacentHTML('beforeend',` <button class="btn pri" id="nextMod" style="margin-left:8px">Next helper: ${nx.name}</button>`); $('#nextMod').onclick=()=>openMod(nx.id,'learn',true);} }
+  });});
+}
+
+/* ---------- hero chip ---------- */
+function renderChip(){
+ const pads=[ [30,30],[160,30],[290,30], [316,150],[316,236], [290,356],[160,356],[30,356], [8,236],[8,150] ];
+ const order=['usb','uart','i2c','spi','pwm','timer','wdt','rtc','adc','ssi'];
+ let s=`<svg viewBox="0 0 420 420" role="img" aria-label="RP2040 peripheral map">`;
+ order.forEach((id,k)=>{const [x,y]=pads[k]; const w=k>=3&&k<=4||k>=8?96:100; let d;
+  if(y===30) d=`M${x+w/2},64 L${x+w/2},104 L${170+(k)*40},104 L${170+k*40},140`;
+  else if(y===356) d=`M${x+w/2},356 L${x+w/2},316 L${170+(k-5)*40},316 L${170+(k-5)*40},280`;
+  else if(x===316) d=`M316,${y+17} L280,${y+17}`;
+  else d=`M104,${y+17} L140,${y+17}`;
+  s+=`<path class="trace" id="tr-${id}" d="${d}"/>`;});
+ s+=`<rect x="140" y="140" width="140" height="140" rx="10" class="die"/>`;
+ for(let i=0;i<14;i++){const o=150+i*9.3; s+=`<rect x="${o}" y="133" width="4" height="7" fill="var(--muted)"/><rect x="${o}" y="280" width="4" height="7" fill="var(--muted)"/><rect x="133" y="${o}" width="7" height="4" fill="var(--muted)"/><rect x="280" y="${o}" width="7" height="4" fill="var(--muted)"/>`;}
+ s+=`<text class="die-t" x="210" y="208" text-anchor="middle">RP2040</text><text class="die-s" x="210" y="228" text-anchor="middle">2 × Cortex-M0+ · 133 MHz</text><text class="die-s" x="210" y="243" text-anchor="middle">264 KB SRAM</text>`;
+ order.forEach((id,k)=>{const [x,y]=pads[k]; const w=(k>=3&&k<=4)||k>=8?96:100; const m=M.find(q=>q.id===id); s+=`<g class="pad" data-id="${id}" tabindex="0" role="button" aria-label="Open ${m.name}"><rect x="${x}" y="${y}" width="${w}" height="34" rx="8"/><text x="${x+w/2}" y="${y+21}" text-anchor="middle">${m.name.replace(' · XIP','')}</text></g>`;});
+ s+='</svg>';
+ const host=$('#chipmap'); host.innerHTML=s; const svg=$('svg',host);
+ order.forEach((id,k)=>addFlow(svg,$('#tr-'+id,svg),1,1800+k*130));
+ $$('.pad',svg).forEach(p=>{const go=()=>openMod(p.dataset.id,'learn',true); p.onclick=go; p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}};});
+ if(hasA&&!RM) anime({targets:$$('.pad',svg),opacity:[0,1],translateY:[10,0],delay:anime.stagger(70,{start:250}),duration:600,easing:'easeOutBack'});
+ if(hasA&&!RM) anime({targets:$$('.trace',svg),strokeDashoffset:[anime.setDashoffset,0],duration:1100,delay:anime.stagger(60),easing:'easeInOutSine'});
+}
+
+/* ---------- lifelong ---------- */
+function renderLife(){
+ const n=M.filter(done).length, fin=P._finished?new Date(P._finished):null, name=store.get('rp2040dummies_name','');
+ const add=(d,k)=>{const x=new Date(d); x.setDate(x.getDate()+k); return x.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});};
+ $('#life').innerHTML=`
+ <div class="life-head"><div><div class="eyebrow">After helper 10</div><h2>You can now learn any chip on your own.</h2>
+  <p>One day the RP2040 will be replaced. Timers, PWM, ADCs, UART, I²C and SPI will still be there, on every chip. When you meet a new microcontroller, ask these six questions about each helper and you will understand it in days, not months.</p></div>
+  <div class="ro" style="min-width:180px"><small>Your progress</small><b style="font-size:24px">${n} / 10</b></div></div>
+ <h4>Six questions for any new helper, on any chip</h4>
+ <div class="play">${[
+  ['Draw the wires','Which wires does it use? Who talks on each one, and which way?'],
+  ['Find the beat','Where does its timing come from? A clock wire, an agreed speed, or a counter?'],
+  ['Find the 3 settings that matter','Open the datasheet chapter. Most helpers need only three settings to start.'],
+  ['Make it visible','Blink an LED, print a value, or use a logic analyser. Never guess in the dark.'],
+  ['Break it on purpose','Wrong speed, missing resistor, no feeding. Learn what failure looks like.'],
+  ['Explain it to a friend','If you can tell it as a story in three sentences, you really know it.']].map((p,k)=>`<div class="ps"><div class="k">STEP ${k+1}</div><h4>${p[0]}</h4><p>${p[1]}</p></div>`).join('')}</div>
+ <h4>Projects that use several helpers together</h4>
+ <div class="cap">${[
+  ['Bedside vitals monitor','MAX30102 SpO₂ and pulse, a TFT waveform, timestamps, and a watchdog so it never freezes on a ward.',['I²C','SPI','RTC','Watchdog','Timer']],
+  ['Wireless ECG logger','AD8232 sampled at 500 Hz, written to microSD, summary over Bluetooth.',['ADC','Timer','SPI','UART']],
+  ['EMG game controller','Muscle signal sets the speed, a buzzer gives feedback, the PC sees a joystick.',['ADC','PWM','USB']],
+  ['Smart pillbox','Daily alarms, a buzzer, an OLED with the dose, and recovery from any lock-up.',['RTC','PWM','I²C','Watchdog']]].map(c=>`<div class="cp-card"><h4>${c[0]}</h4><div class="chips">${c[2].map(x=>`<span>${x}</span>`).join('')}</div><p class="hint">${c[1]}</p></div>`).join('')}</div>
+ <div class="cert ${fin?'':'locked'}">
+  <div class="badge"><div class="eyebrow">RP2040 Peripherals for Dummies</div><div class="t">Met all ten helpers</div><div class="nm" id="certName">${esc(name||'Your name')}</div>
+   <div class="hint">${fin?'Completed all ten modules on '+fin.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}):'Complete all ten modules to unlock'}</div>
+   <div class="chips" style="justify-content:center">${M.map(m=>`<span style="${done(m)?'border-color:var(--accent);color:var(--accent)':''}">${m.name.replace(' · XIP','')}</span>`).join('')}</div></div>
+  <div><label class="ctl" style="margin-bottom:12px"><span>Name on badge</span><input type="text" id="nm" value="${esc(name)}" placeholder="Your name"></label>
+   <h4>Come back on these days</h4><p class="hint">We forget quickly unless we revisit. On each date, open any three helpers, read the story again and redo the quiz without looking.</p>
+   <div class="rev">${[1,7,30,90].map(k=>`<div><span>Review ${k===1?'tomorrow':'after '+k+' days'}</span><b>${fin?add(fin,k):'—'}</b></div>`).join('')}</div>
+   <label class="ctl"><span>The next thing I will build</span><textarea id="refl" placeholder="e.g. a 2-channel EMG logger for our rehab lab">${esc(store.get('rp2040dummies_refl',''))}</textarea></label>
+   <p class="hint" style="margin-top:10px">Keep going: <a href="https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf" target="_blank" rel="noopener">RP2040 datasheet</a> · <a href="https://www.raspberrypi.com/documentation/pico-sdk/" target="_blank" rel="noopener">Pico SDK docs</a> · <a href="https://docs.micropython.org/en/latest/rp2/quickref.html" target="_blank" rel="noopener">MicroPython rp2 reference</a> · <a href="https://wokwi.com" target="_blank" rel="noopener">Wokwi simulator</a></p></div></div>`;
+ $('#nm').oninput=e=>{store.set('rp2040dummies_name',e.target.value); $('#certName').textContent=e.target.value||'Your name';};
+ $('#refl').oninput=e=>store.set('rp2040dummies_refl',e.target.value);
+}
+function celebrate(){ $('#life').scrollIntoView({behavior:RM?'auto':'smooth'}); const b=$('.badge'); if(hasG&&b&&!RM) gsap.fromTo(b,{scale:.85,rotate:-3},{scale:1,rotate:0,duration:1.2,ease:'elastic.out(1,.4)'}); }
+
+$('#startBtn').onclick=()=>openMod('timer','learn',true);
+const toGuide=()=>$('#guide').scrollIntoView({behavior:RM?'auto':'smooth'}); $('#guideBtn').onclick=toGuide; $('#helpBtn').onclick=toGuide;
+renderChip(); renderRail(); renderPanel(); renderLife(); updateProgress();
+if(hasG&&!RM) gsap.from('.hero h1, .hero p, .hero .row',{y:18,opacity:0,stagger:.1,duration:.7,ease:'power3.out'});
+})();
+</script>
+</body>
+</html>
