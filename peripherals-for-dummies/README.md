@@ -1,7 +1,7 @@
 # RP2040 Peripherals for Dummies
 
 A plain-language, self-paced study tool for **U21BM501 – Microcontroller and its Applications**.
-It covers ten RP2040 peripherals: Timer, PWM, ADC, UART, I²C, SPI, RTC, Watchdog, SSI/XIP and USB.
+It starts with Helper 0, "The basics" (no prerequisites: pins, volts, bits, hex, clocks, units, registers), then covers ten RP2040 peripherals: Timer, PWM, ADC, UART, I²C, SPI, RTC, Watchdog, SSI/XIP and USB.
 
 **Open:** https://allwyn3t6.github.io/RP-Pi-PICO/peripherals-for-dummies/
 

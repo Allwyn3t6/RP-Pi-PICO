@@ -276,6 +276,16 @@ details.teach ol{margin:0 0 14px;padding-left:20px;font-size:14.5px}
 details.teach li{margin-bottom:4px}
 .fine{font-size:12px;color:var(--muted);margin-top:6px}
 @media (max-width:920px){.bigidea{grid-template-columns:minmax(0,1fr)}}
+.bitrow{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;margin-bottom:8px}
+.bitb{border:1px solid var(--line);background:var(--surface2);border-radius:10px;padding:8px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.bitb b{font:700 22px var(--f-mono)}
+.bitb small{font:600 10px var(--f-mono);color:var(--muted)}
+.bitb.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.bitb.on small{color:var(--accent-ink);opacity:.85}
+.pinrow{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;margin-bottom:14px;text-align:center}
+.pinrow i{display:block;width:14px;height:14px;border-radius:50%;margin:0 auto 2px;background:var(--line);transition:background .2s, box-shadow .2s}
+.pinrow .on i{background:var(--sig3);box-shadow:0 0 10px 2px var(--sig3)}
+.pinrow small{font:600 10px var(--f-mono);color:var(--muted)}
 #guide,#lab,#life{scroll-margin-top:70px}
 @media (max-width:520px){.top .bar{display:none} .brand{font-size:15px;line-height:1.2} .jargon dl{grid-template-columns:minmax(0,1fr)} .jargon dd{margin-bottom:6px} .guide-box{padding:18px 16px}}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
@@ -285,16 +295,16 @@ details.teach li{margin-bottom:4px}
 <body>
 <header class="top"><div class="wrap">
   <div class="brand"><i></i>RP2040 Peripherals for Dummies</div>
-  <div class="prog"><button class="hbtn" id="helpBtn">How to use</button><span id="progTxt">0 / 10 done</span><div class="bar"><b id="progBar"></b></div></div>
+  <div class="prog"><button class="hbtn" id="helpBtn">How to use</button><span id="progTxt">0 / 11 done</span><div class="bar"><b id="progBar"></b></div></div>
 </div></header>
 
 <section class="wrap hero">
   <div>
     <div class="eyebrow">U21BM501 · Microcontroller and its Applications</div>
     <h1>Your Pico has ten little helpers. <em>Meet them one at a time.</em></h1>
-    <p>No prior knowledge needed. Every helper (peripheral) is explained with an everyday story first, then a moving picture, then a simulator you can poke and break. Each one takes about 25 minutes.</p>
+    <p>No electronics or coding background needed, and no hardware either. <b>Helper 0</b> teaches the basics everything else rests on: pins, volts, bits, hex and clocks. Then every helper is explained with an everyday story, a moving picture and a simulator you can poke and break.</p>
     <div class="row">
-      <button class="btn pri" id="startBtn">Start with helper 1</button>
+      <button class="btn pri" id="startBtn">Start with Helper 0: the basics</button>
       <button class="btn" id="guideBtn">How to use this guide</button>
     </div>
   </div>
@@ -307,7 +317,7 @@ details.teach li{margin-bottom:4px}
   <h2>How to use this guide</h2>
   <p>A <b>peripheral</b> is a helper circuit built into the RP2040 chip. Each one does a single job (keeping time, measuring a voltage, talking to a sensor) so your program does not have to. Learn them one by one, in this order:</p>
   <ol class="gsteps">
-   <li><b>Pick a helper</b>Start with helper 1 (Timer) and work down the list of helpers. It goes from easiest to hardest. You can also tap any box on the chip picture.</li>
+   <li><b>Start at Helper 0</b>“The basics” assumes nothing: what a microcontroller is, ON/OFF pins, bits, hex, clocks and units. Do it first, even if you think you know it. Then work down the list; it goes from easiest to hardest.</li>
    <li><b>1 · Understand</b>Read the one-line summary and the “Picture this” story. Then press <i>Next</i> through four short steps while the diagram lights up. Open the Jargon buster if a word is new.</li>
    <li><b>2 · Play</b>Do the three “Try this” tasks in the simulator and tick them off. Break things on purpose: that is how you learn what failure looks like.</li>
    <li><b>3 · Real life</b>See where the helper is used in medical devices, which Pico pins to wire, and the mistakes beginners usually make.</li>
@@ -317,12 +327,14 @@ details.teach li{margin-bottom:4px}
   <div class="gfacts">
    <div><b>Three dots = done</b>Each helper in the list has three dots: Understand, Play and Check yourself. All three green means that helper is complete.</div>
    <div><b>Your progress is saved</b>…in this browser on this device. Use the same phone or PC to continue. Private or incognito windows forget everything.</div>
-   <div><b>Pace</b>About 25 minutes per helper, 4 hours in total. One or two helpers a day works well.</div>
-   <div><b>Finished all ten?</b>Scroll to the end for your badge, a review calendar and project ideas that combine several helpers.</div>
+   <div><b>Pace</b>About 30 minutes for the basics, 25 minutes per helper after that: around 4½ hours in total. One or two helpers a day works well.</div>
+   <div><b>No Pico? No problem</b>Every Code tab runs in the free browser simulator at wokwi.com. Choose “Raspberry Pi Pico” and “MicroPython”.</div>
+   <div><b>Finished everything?</b>Scroll to the end for your badge, a review calendar and project ideas that combine several helpers.</div>
   </div>
   <details class="teach"><summary>Teacher’s notes</summary>
    <ol>
-    <li>Share this link with the class: students need nothing but a browser. It works on phones.</li>
+    <li>Share this link with the class: students need nothing but a browser, and no prior electronics or programming. It works on phones.</li>
+    <li>Ask every student to finish Helper 0 (the basics) before the first lab. It covers volts, GPIO, bits, hex, Hz, unit prefixes, registers and interrupts.</li>
     <li>In a lab hour, do one helper together: read the story aloud, run the simulator on the projector, then let students finish Play and Check yourself alone.</li>
     <li>For homework, set two helpers and ask for a screenshot of the three green dots, or of the badge at the end.</li>
     <li>Pair each helper with a Wokwi build using the snippet in the Code tab (for example, PWM with a servo on GP15).</li>
@@ -1090,6 +1102,78 @@ while True:
 quiz:[['The RP2040 USB controller runs at',['Low speed, 1.5 Mbit/s','Full speed, 12 Mbit/s','High speed, 480 Mbit/s','SuperSpeed'],1,'USB 1.1 full speed, clocked from a 48 MHz clk_usb.'],['During enumeration the host assigns',['A baud rate','A 7-bit device address','The vendor ID','The crystal frequency'],1,'SET_ADDRESS gives the device a number from 1 to 127; until then it answers at address 0.'],['In NRZI encoding, a 0 bit is sent as',['A transition','No transition','SE0','A pull-up'],0,'0 flips J/K state, 1 holds it. Bit stuffing guarantees transitions in long runs of 1s.']]
 });
 
+/* ---------- 0 THE BASICS (no prerequisites) ---------- */
+M.unshift({id:'basics', name:'The basics', full:'Everything the other ten helpers assume you already know', tag:'Start here',
+nick:'Start here, no experience needed',
+one:'A microcontroller is a tiny computer on one chip. It reads and sets pins that are either ON (3.3 V) or OFF (0 V), counts in bits, and does everything to the beat of a clock.',
+story:'Think of the RP2040 as a very fast, very obedient office clerk. Its pins are light switches on the wall it can flip or look at. Its numbers are rows of those switches. Its clock is the ticking wall clock it works to. The ten helpers are assistants sitting next to it, each doing one job so the clerk does not have to.',
+pins:'On the Pico board: <b>GP0–GP28</b> are general pins, <b>GP25</b> is the green on-board LED, <b>3V3</b> gives 3.3 V, <b>GND</b> is 0 V, <b>VBUS</b> is 5 V from USB. No hardware? Use the free online simulator at <a href="https://wokwi.com/projects/new/micropython-pi-pico" target="_blank" rel="noopener">wokwi.com</a>.',
+dia:{blocks:[['pc',20,30,130,50,'Your laptop','you write code'],['pico',190,30,150,50,'Pico board','the green card'],['chip',380,30,200,50,'RP2040 chip','the brain on the board'],['bits',20,120,160,50,'8 bits = 1 byte','0 … 255 · 0x00 … 0xFF'],['clk',200,120,150,50,'Clock','beats per second (Hz)'],['gpio',380,120,200,50,'GPIO pin','3.3 V = 1 · 0 V = 0'],['units',20,225,160,50,'µ · m · k · M','tiny ↔ huge'],['reg',200,225,190,50,'Register','a box of bits = settings'],['led',430,225,120,50,'LED','on or off']],
+ wires:[['w1','M150,55 L190,55','USB',152,48],['w2','M340,55 L380,55'],['w3','M480,80 L480,120'],['w4','M490,170 L490,225'],['w6','M295,170 L295,225']]},
+learn:[
+ {t:'A tiny computer on one chip',b:'A microcontroller is a whole computer squeezed onto one chip: a processor (the brain), memory, and helpers for talking to the outside world. The <b>Raspberry Pi Pico</b> is the small green board; the <b>RP2040</b> is the black chip in its middle. You write a program on your laptop, send it over USB, and the chip runs it on its own.',show:['pc','pico','chip','w1','w2'],flow:['w1','w2'],key:['Pico ≠ RP2040','board vs the chip on it']},
+ {t:'Pins: ON or OFF',b:'Around the edge of the board are pins called <b>GPIO</b> (General Purpose Input/Output). Voltage is electrical “pressure”, measured in volts (V). A pin is either at <b>3.3 V</b>, which we call <b>1</b>, HIGH or ON, or at <b>0 V</b>, called <b>0</b>, LOW or OFF. As an output it can switch an LED on. As an input it can tell whether a button is pressed. <b>GND</b> (ground) is the 0 V reference every circuit must share.',show:['gpio','led','w3','w4'],flow:['w3','w4'],key:['3.3 V','is a 1 on the RP2040. Never feed it 5 V']},
+ {t:'Bits, bytes and hex',b:'One ON/OFF value is a <b>bit</b>. Eight bits side by side make a <b>byte</b>, which can count from 0 to 255. Each position is worth double the one on its right: 128, 64, 32, 16, 8, 4, 2, 1. Engineers often write bytes in <b>hexadecimal</b> (hex), base 16, using 0–9 and A–F. The <b>0x</b> in front means “this is hex”: 0xFF = 255, 0x41 = 65.',show:['bits'],flow:[],key:['1 byte = 8 bits','0 to 255, or 0x00 to 0xFF']},
+ {t:'The clock: doing things to a beat',b:'Every chip works to a steady beat called the <b>clock</b>. <b>Frequency</b> is beats per second, measured in hertz (Hz). The time for one beat is the <b>period</b>: period = 1 ÷ frequency. A 2 Hz blink has a 0.5 s period. The RP2040 normally runs at 125 MHz, 125 million beats a second.',show:['clk'],flow:['w3'],key:['period = 1 ÷ f','1 kHz → 1 ms']},
+ {t:'Tiny and huge numbers',b:'Electronics uses prefixes to keep numbers short. <b>k</b> (kilo) = thousand, <b>M</b> (mega) = million. <b>m</b> (milli) = one thousandth, <b>µ</b> (micro) = one millionth, <b>n</b> (nano) = one billionth. So 1 ms = 1 000 µs, and 1 MHz = 1 000 kHz. Watch the case: m (milli) and M (mega) are a billion times apart.',show:['units'],flow:[],key:['m ≠ M','milli vs mega']},
+ {t:'Registers, helpers and interrupts',b:'A <b>peripheral</b> is a helper circuit inside the chip with one job: keep time, measure voltage, send bytes. You control a helper by writing numbers into its <b>registers</b>: small numbered boxes of bits, where each bit is a setting. When a helper needs attention (“data arrived!”), it can raise an <b>interrupt</b>, a tap on the processor’s shoulder. MicroPython does most register work for you.',show:['reg','w6'],flow:['w6'],key:['register','a numbered box of bits that holds settings']},
+ {t:'Running your first program',b:'We write programs in <b>MicroPython</b>, a beginner-friendly version of Python made for microcontrollers. With a real Pico, install <b>Thonny</b> (free), plug the Pico in by USB and press Run. With no hardware, open <b>Wokwi</b> in your browser and pick “Raspberry Pi Pico, MicroPython”. The Code tab has a blinking-LED program to try first.',show:[],flow:['w1','w2','w3','w4'],key:['Wokwi','free simulator, no Pico needed']}],
+jargon:[['Microcontroller','A small computer on one chip that controls a device.'],['Voltage (V)','Electrical pressure. 3.3 V means ON on the Pico.'],['Current (A, mA)','How much electricity flows. Pins can supply only a few mA.'],['GND','Ground, the shared 0 V reference.'],['GPIO','A pin you can use as input or output.'],['Bit / byte','One 0-or-1 value / eight of them.'],['Hex (0x…)','Base-16 numbers using 0–9 and A–F.'],['Hz','Hertz: beats or cycles per second.'],['Register','A numbered box of bits that controls a helper.'],['Peripheral','A helper circuit built into the chip.'],['Interrupt','A helper tapping the processor on the shoulder.'],['Firmware','The program stored on a microcontroller.']],
+tries:['Switch on bits until the decimal reads 255. What is that in hex?','Make the byte 0x41. Which letter does it stand for?','Set the clock to 2 Hz. Check that the period reads 0.5 s, then try 10 Hz.'],
+mistakes:['Calling the RP2040 chip “the Pico” and the board “RP2040”: the Pico is the board.','Connecting a 5 V signal to a 3.3 V pin. It can damage the chip.','Forgetting to connect GND between two boards.','Reading 0x10 as ten. It is sixteen.','Mixing up m (milli) and M (mega).'],
+cases:[['You already own dozens','Everyday life','Your washing machine, TV remote, microwave and car each have one or more microcontrollers deciding what happens next.'],['Pulse oximeter','Biomedical','A microcontroller flashes red and infrared LEDs, measures the light with an ADC, calculates SpO₂ and shows it on a display.'],['Glucometer','Biomedical','It measures a tiny current from the test strip, converts it to a number, applies a calibration and shows mg/dL. All in a few square millimetres of silicon.']],
+code:{lang:'MicroPython',src:`# Your first program: blink the Pico's on-board LED
+from machine import Pin      # Pin lets us control a GPIO pin
+import time                  # time lets us wait
+
+led = Pin(25, Pin.OUT)       # GP25 is the on-board LED, used as an output
+                             # (on a Pico W use Pin("LED", Pin.OUT))
+
+while True:                  # repeat forever
+    led.value(1)             # 1 = 3.3 V = LED on
+    time.sleep(0.5)          # wait half a second
+    led.value(0)             # 0 = 0 V  = LED off
+    time.sleep(0.5)          # one blink every 1 s, i.e. 1 Hz
+
+# No Pico? Open wokwi.com > New project > Raspberry Pi Pico > MicroPython,
+# paste this code and press the green play button.`},
+quiz:[['The Raspberry Pi Pico is',['The name of the chip','The small board that carries the RP2040 chip','A laptop','A programming language'],1,'The Pico is the board; the RP2040 is the chip on it.'],['On the RP2040, a pin at 3.3 V is read as',['0','1','255','0x00'],1,'3.3 V is HIGH, a 1. 0 V is LOW, a 0.'],['0xFF in decimal is',['15','100','255','256'],2,'F = 15, so 0xFF = 15×16 + 15 = 255, the largest value one byte can hold.'],['A light blinks 4 times a second. Its period is',['4 s','0.4 s','0.25 s','25 s'],2,'Period = 1 ÷ 4 Hz = 0.25 s.']],
+sim(root,api){
+ root.innerHTML=`<h4>Bit flipper: tap the switches</h4>
+ <div class="bitrow" id="bs-row">${[7,6,5,4,3,2,1,0].map(b=>`<button class="bitb" data-b="${b}" aria-pressed="false"><small>bit ${b}</small><b>0</b><small>${1<<b}</small></button>`).join('')}</div>
+ <div class="pinrow" id="bs-pins">${[7,6,5,4,3,2,1,0].map(b=>`<div><i></i><small>GP${b}</small></div>`).join('')}</div>
+ <div class="readouts" id="bs-ro"></div>
+ <div class="ctls"><button class="btn" id="bs-clr">All off</button><button class="btn" id="bs-all">All on</button></div>
+ <h4 style="margin-top:20px">Clock: beats per second</h4>
+ <div class="ctls"><label class="ctl"><span>Frequency <b id="bs-fv"></b></span><input type="range" id="bs-f" min="0.5" max="10" step="0.5" value="1"></label></div>
+ <div class="stage" style="grid-template-columns:minmax(0,1fr) 160px"><canvas class="cv" id="bs-cv" style="height:120px"></canvas><div class="gadget"><div class="led" id="bs-led" style="background:var(--sig1);box-shadow:0 0 30px 6px var(--sig1)"></div><div>GP25 LED</div></div></div>
+ <div class="readouts" id="bs-cro"></div>
+ <p class="hint">The real RP2040 clock beats 125 000 000 times a second, so each beat lasts only 8 ns. Here it is slowed down so you can see it.</p>`;
+ let v=0;
+ function show(){
+  $$('.bitb',root).forEach(b=>{const on=(v>>b.dataset.b)&1; b.classList.toggle('on',!!on); b.setAttribute('aria-pressed',!!on); b.querySelector('b').textContent=on;});
+  $$('#bs-pins div',root).forEach((d,k)=>d.classList.toggle('on',!!((v>>(7-k))&1)));
+  const ch=v>=32&&v<127?`'${String.fromCharCode(v)}'`:'(not printable)';
+  $('#bs-ro',root).innerHTML=ro([['Binary',v.toString(2).padStart(8,'0')],['Decimal',v],['Hex',hex(v)],['As a letter (ASCII)',ch],['Sum of switched-on weights',[128,64,32,16,8,4,2,1].filter(w=>v&w).join(' + ')||'0']]);
+ }
+ $$('.bitb',root).forEach(b=>b.onclick=()=>{v^=1<<b.dataset.b; show(); api.touched(); if(hasA) anime({targets:b,scale:[1.12,1],duration:350,easing:'easeOutBack'});});
+ $('#bs-clr',root).onclick=()=>{v=0;show();api.touched();}; $('#bs-all',root).onclick=()=>{v=255;show();api.touched();}; 
+ $('#bs-f',root).oninput=()=>api.touched();
+ show(); const cv=$('#bs-cv',root);
+ api.loop((dt,now)=>{
+  const f=+$('#bs-f',root).value, T=1/f, t=now/1000, on=((t*f)%1)<0.5;
+  $('#bs-fv',root).textContent=f+' Hz';
+  $('#bs-led',root).style.opacity=on?1:.08;
+  $('#bs-cro',root).innerHTML=ro([['Frequency',f+' Hz'],['Period = 1 ÷ f',T.toFixed(3)+' s'],['ON time per beat',(T/2).toFixed(3)+' s'],['Blinks per minute',Math.round(f*60)]]);
+  const [c,w,h]=hiDPI(cv); c.clearRect(0,0,w,h); const L=40,R=w-10,hi=24,lo=h-26,span=3;
+  c.font='10px '+css('--f-mono'); c.fillStyle=css('--muted'); c.fillText('3.3 V',4,hi+4); c.fillText('0 V',4,lo+4);
+  c.strokeStyle=css('--sig1'); c.lineWidth=2; c.beginPath(); let py=null;
+  for(let x=L;x<=R;x++){const tt=t-span+(x-L)/(R-L)*span; const y=((tt*f)%1+1)%1<0.5?hi:lo; if(py===null)c.moveTo(x,y); else if(y!==py){c.lineTo(x,py);c.lineTo(x,y);} else c.lineTo(x,y); py=y;}
+  c.stroke(); c.lineWidth=1; c.fillStyle=css('--muted'); c.fillText('last 3 seconds →',L,h-8);
+ });
+}
+});
+
 /* ================= PLAIN-LANGUAGE LAYER ================= */
 const D = {
 timer:{nick:'The stopwatch',
@@ -1222,21 +1306,21 @@ usb:{nick:'The introduction at reception',
  mistakes:['Using a charge-only cable: power but no data.','Expecting the baud rate to matter on USB serial. It is ignored.','Forgetting to hold BOOTSEL while plugging in to upload a .uf2 file.'],
  quiz:[['The “who are you?” handshake after plugging in is called',['Enumeration','Aliasing','Parity','Bit stuffing'],0,'The host reads descriptors and assigns an address.'],['Hold BOOTSEL and plug in. The Pico appears as',['A keyboard','A USB drive','A mouse','A speaker'],1,'A mass-storage drive. Drag a .uf2 file onto it.'],['The RP2040 USB speed is',['1.5 Mbit/s','12 Mbit/s','480 Mbit/s','5 Gbit/s'],1,'USB full speed.']]}
 };
-M.forEach(m=>{const d=D[m.id]; m.nick=d.nick; m.one=d.one; m.story=d.story; m.jargon=d.jargon; m.tries=d.tries; m.mistakes=d.mistakes; m.quiz=d.quiz;
+M.forEach(m=>{const d=D[m.id]; if(!d) return; m.nick=d.nick; m.one=d.one; m.story=d.story; m.jargon=d.jargon; m.tries=d.tries; m.mistakes=d.mistakes; m.quiz=d.quiz;
  d.learn.forEach((s,i)=>{ m.learn[i]={...m.learn[i], t:s[0], b:s[1], key:[s[2],s[3]]}; }); });
 
 /* ================= APP ================= */
 const P = store.get('rp2040dummies', {}); M.forEach(m=>{P[m.id]=P[m.id]||{l:0,s:0,q:0}});
-let cur = store.get('rp2040dummies_cur','timer'), tab='learn', stepI=0, cleanups=[];
+let cur = store.get('rp2040dummies_cur','basics'), tab='learn', stepI=0, cleanups=[];
 const done=m=>P[m.id].l&&P[m.id].s&&P[m.id].q;
 function save(){store.set('rp2040dummies',P); updateProgress();}
 function mark(id,k){ if(!P[id][k]){P[id][k]=1; if(done(M.find(m=>m.id===id)) && !P._done) {} save(); renderRail(); if(M.every(done)&&!P._finished){P._finished=new Date().toISOString(); save(); renderLife(); celebrate();}} }
 
-function updateProgress(){const n=M.filter(done).length; $('#progTxt').textContent=n+' / 10 done'; $('#progBar').style.width=(n*10)+'%'; $$('.pad').forEach(p=>p.classList.toggle('done',done(M.find(m=>m.id===p.dataset.id))));}
+function updateProgress(){const n=M.filter(done).length; $('#progTxt').textContent=n+' / '+M.length+' done'; $('#progBar').style.width=(n/M.length*100)+'%'; $$('.pad').forEach(p=>p.classList.toggle('done',done(M.find(m=>m.id===p.dataset.id))));}
 
 function renderRail(){
  const r=$('#rail'); $$('.mbtn',r).forEach(e=>e.remove());
- M.forEach((m,i)=>{const b=document.createElement('button'); b.className='mbtn'+(m.id===cur?' on':''); b.innerHTML=`<span class="n">${String(i+1).padStart(2,'0')}</span><span class="nm">${m.name}<small>${m.nick}</small></span><span class="dots" title="Understand · Play · Check yourself"><i class="${P[m.id].l?'y':''}"></i><i class="${P[m.id].s?'y':''}"></i><i class="${P[m.id].q?'y':''}"></i></span>`; b.onclick=()=>openMod(m.id,'learn'); r.appendChild(b);});
+ M.forEach((m,i)=>{const b=document.createElement('button'); b.className='mbtn'+(m.id===cur?' on':''); b.innerHTML=`<span class="n">${String(i).padStart(2,'0')}</span><span class="nm">${m.name}<small>${m.nick}</small></span><span class="dots" title="Understand · Play · Check yourself"><i class="${P[m.id].l?'y':''}"></i><i class="${P[m.id].s?'y':''}"></i><i class="${P[m.id].q?'y':''}"></i></span>`; b.onclick=()=>openMod(m.id,'learn'); r.appendChild(b);});
 }
 
 function openMod(id,t='learn',scroll=false){ cur=id; tab=t; stepI=0; store.set('rp2040dummies_cur',id); renderRail(); renderPanel(); if(scroll) $('#lab').scrollIntoView({behavior:RM?'auto':'smooth'}); }
@@ -1244,7 +1328,7 @@ function openMod(id,t='learn',scroll=false){ cur=id; tab=t; stepI=0; store.set('
 function renderPanel(){
  cleanups.forEach(f=>f()); cleanups=[]; simLoop=null; clearFlows($('#pb'));
  const m=M.find(x=>x.id===cur), i=M.indexOf(m);
- $('#ph').innerHTML=`<div class="num">HELPER ${i+1} OF 10</div><h2>${m.name} <span>· ${m.nick.toLowerCase()}</span></h2><div class="full">${m.full}</div>`;
+ $('#ph').innerHTML=`<div class="num">${i===0?'HELPER 0 · START HERE':'HELPER '+i+' OF 10'}</div><h2>${m.name} <span>· ${m.nick.toLowerCase()}</span></h2><div class="full">${m.full}</div>`;
  const tabs=[['learn','1 · Understand'],['sim','2 · Play'],['world','3 · Real life'],['code','4 · Code'],['quiz','5 · Check yourself']];
  $('#tabs').innerHTML=tabs.map(([k,v])=>`<button class="tab${k===tab?' on':''}" role="tab" aria-selected="${k===tab}" data-t="${k}">${v}</button>`).join('');
  $$('#tabs .tab').forEach(b=>b.onclick=()=>{tab=b.dataset.t; renderPanel();});
@@ -1350,8 +1434,8 @@ function renderLife(){
   ['EMG game controller','Muscle signal sets the speed, a buzzer gives feedback, the PC sees a joystick.',['ADC','PWM','USB']],
   ['Smart pillbox','Daily alarms, a buzzer, an OLED with the dose, and recovery from any lock-up.',['RTC','PWM','I²C','Watchdog']]].map(c=>`<div class="cp-card"><h4>${c[0]}</h4><div class="chips">${c[2].map(x=>`<span>${x}</span>`).join('')}</div><p class="hint">${c[1]}</p></div>`).join('')}</div>
  <div class="cert ${fin?'':'locked'}">
-  <div class="badge"><div class="eyebrow">RP2040 Peripherals for Dummies</div><div class="t">Met all ten helpers</div><div class="nm" id="certName">${esc(name||'Your name')}</div>
-   <div class="hint">${fin?'Completed all ten modules on '+fin.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}):'Complete all ten modules to unlock'}</div>
+  <div class="badge"><div class="eyebrow">RP2040 Peripherals for Dummies</div><div class="t">Met every helper</div><div class="nm" id="certName">${esc(name||'Your name')}</div>
+   <div class="hint">${fin?'Completed all eleven helpers on '+fin.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}):'Complete all eleven helpers to unlock'}</div>
    <div class="chips" style="justify-content:center">${M.map(m=>`<span style="${done(m)?'border-color:var(--accent);color:var(--accent)':''}">${m.name.replace(' · XIP','')}</span>`).join('')}</div></div>
   <div><label class="ctl" style="margin-bottom:12px"><span>Name on badge</span><input type="text" id="nm" value="${esc(name)}" placeholder="Your name"></label>
    <h4>Come back on these days</h4><p class="hint">We forget quickly unless we revisit. On each date, open any three helpers, read the story again and redo the quiz without looking.</p>
@@ -1363,7 +1447,7 @@ function renderLife(){
 }
 function celebrate(){ $('#life').scrollIntoView({behavior:RM?'auto':'smooth'}); const b=$('.badge'); if(hasG&&b&&!RM) gsap.fromTo(b,{scale:.85,rotate:-3},{scale:1,rotate:0,duration:1.2,ease:'elastic.out(1,.4)'}); }
 
-$('#startBtn').onclick=()=>openMod('timer','learn',true);
+$('#startBtn').onclick=()=>openMod('basics','learn',true);
 const toGuide=()=>$('#guide').scrollIntoView({behavior:RM?'auto':'smooth'}); $('#guideBtn').onclick=toGuide; $('#helpBtn').onclick=toGuide;
 renderChip(); renderRail(); renderPanel(); renderLife(); updateProgress();
 if(hasG&&!RM) gsap.from('.hero h1, .hero p, .hero .row',{y:18,opacity:0,stagger:.1,duration:.7,ease:'power3.out'});
